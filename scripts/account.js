@@ -80,8 +80,43 @@ async function searchUsers(searchTerm) {
     }
 }
 
+async function login(userName, password) {
+    try {
+        if(!userName || !password) {
+            throw new Error('Missing required fields');
+        }
+        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
+            userName,
+            password
+        });
+        
+        const { user, access_token } = response.data.data;
+
+        console.log(response.data.data);
+        
+        return {
+            username: user.username,
+            name: user.name,
+            nickname: user.name,
+            picture: user.picture,
+            phone_number: user.phone_number || '',
+            app_metadata: {
+                xrp_address: user.app_metadata?.xrp_address || '',
+                xrp_seed: user.app_metadata?.xrp_seed || '',
+                xrp_public_key: user.app_metadata?.xrp_public_key || '',
+                xrp_secret: user.app_metadata?.xrp_secret || ''
+            }
+        };
+    } catch (error) {
+        if (error.response && error.response.data && error.response.data.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
 export {
-    createUser, deleteUser, getUser, searchUsers, updateUser
+    createUser, deleteUser, getUser, login, searchUsers, updateUser
 };
 
 

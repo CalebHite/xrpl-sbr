@@ -5,12 +5,11 @@ import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { createUser, getUser } from '@/scripts/account';
+import { createUser, login } from '@/scripts/account';
 import { useUser } from './context/UserContext';
 
 export type User = {
   username: string;
-  password: string;
   name: string;
   nickname: string;
   picture: string;
@@ -37,20 +36,25 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      const user = await getUser(username);
-      if (user.password === password) {
-        setUser(user);
-        router.replace('/(tabs)');
-      } else {
-        Alert.alert('Error', 'Invalid password');
+      if (!username || !password) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
       }
+      console.log('Attempting login with:', { username, password: '***' });
+      const user = await login(username, password);
+      setUser(user);
+      router.replace('/(tabs)');
     } catch (error: unknown) {
       console.error('Login error:', error);
-      const axiosError = error as AxiosError<ErrorResponse>;
-      Alert.alert(
-        'Error',
-        axiosError.response?.data?.message || 'Failed to login. Please check your connection and try again.'
-      );
+      if (error instanceof Error) {
+        Alert.alert('Error', error.message);
+      } else {
+        const axiosError = error as AxiosError<ErrorResponse>;
+        Alert.alert(
+          'Error',
+          axiosError.response?.data?.message || 'Failed to login. Please check your credentials and try again.'
+        );
+      }
     }
   };
 
