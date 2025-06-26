@@ -1,12 +1,14 @@
 "use client"
 
+import { getBalance } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
 export default function Profile () {
   const [showFullAddress, setShowFullAddress] = useState(false)
+  const [balance, setBalance] = useState(0);
 
   const user = useUser().user;
 
@@ -74,6 +76,12 @@ export default function Profile () {
     }).format(amount)
   }
 
+  useEffect(() => {
+    getBalance(user?.app_metadata?.xrp_address || "").then((data) => {
+      setBalance(data.data.balance);
+    });
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -99,7 +107,7 @@ export default function Profile () {
         {/* Account Balance */}
         <View style={styles.balanceSection}>
           <Text style={styles.balanceLabel}>Account Balance</Text>
-          <Text style={styles.balanceAmount}>{formatCurrency(0)}</Text>
+          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
         </View>
 
         {/* Friends Count */}

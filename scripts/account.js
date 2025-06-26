@@ -115,8 +115,18 @@ async function login(userName, password) {
     }
 }
 
+async function getBalance(address) {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/user/balance/${address}`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to get balance:', error);
+        throw error;
+    }
+}
+
 export {
-    createUser, deleteUser, getUser, login, searchUsers, updateUser
+    createUser, deleteUser, getBalance, getUser, login, searchUsers, updateUser
 };
 
 
