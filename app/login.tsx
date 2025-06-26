@@ -1,10 +1,12 @@
 import { AxiosError } from 'axios';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { createUser, getUser } from '@/scripts/account';
+import { useUser } from './context/UserContext';
 
 export type User = {
   username: string;
@@ -15,6 +17,9 @@ export type User = {
   phone_number: string;
   app_metadata: {
     xrp_address: string;
+    xrp_seed: string;
+    xrp_public_key: string;
+    xrp_secret: string;
   };
 };
 
@@ -22,7 +27,8 @@ interface ErrorResponse {
   message: string;
 }
 
-export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
+export default function Login() {
+  const { setUser } = useUser();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -33,7 +39,8 @@ export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
     try {
       const user = await getUser(username);
       if (user.password === password) {
-        onLogin(user);
+        setUser(user);
+        router.replace('/(tabs)');
       } else {
         Alert.alert('Error', 'Invalid password');
       }
@@ -54,7 +61,8 @@ export default function Login({ onLogin }: { onLogin: (user: User) => void }) {
         return;
       }
       const user = await createUser(username, password, name, phoneNumber);
-      onLogin(user);
+      setUser(user);
+      router.replace('/(tabs)');
     } catch (error: unknown) {
       console.error('Signup error:', error);
       const axiosError = error as AxiosError<ErrorResponse>;

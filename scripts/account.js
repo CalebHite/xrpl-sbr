@@ -9,6 +9,12 @@ const API_BASE_URL = __DEV__
 
 async function createUser(userName, password, name, phoneNumber) {
     try {
+        if(!userName || !password || !name || !phoneNumber) {
+            throw new Error('Missing required fields');
+        }
+        if(phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
+            throw new Error('Invalid phone number. Format: 1234567890');
+        }
         const response = await axios.post(`${API_BASE_URL}/user/`, {
             userName,
             password,
@@ -24,6 +30,9 @@ async function createUser(userName, password, name, phoneNumber) {
 
 async function getUser(userName) {
     try {
+        if(!userName) {
+            throw new Error('Missing required fields');
+        }
         const response = await axios.get(`${API_BASE_URL}/user/${userName}`);
         return response.data;
     } catch (error) {
@@ -34,6 +43,9 @@ async function getUser(userName) {
 
 async function deleteUser(userId) {
     try {
+        if(!userId) {
+            throw new Error('Missing required fields');
+        }
         const response = await axios.delete(`${API_BASE_URL}/user/${userId}`);
         return response.data;
     } catch (error) {
@@ -44,6 +56,9 @@ async function deleteUser(userId) {
 
 async function updateUser(userId, updates) {
     try {
+        if(!userId || !updates) {
+            throw new Error('Missing required fields');
+        }
         const response = await axios.patch(`${API_BASE_URL}/user/${userId}`, updates);
         return response.data;
     } catch (error) {
@@ -54,6 +69,9 @@ async function updateUser(userId, updates) {
 
 async function searchUsers(searchTerm) {
     try {
+        if(!searchTerm) {
+            throw new Error('Missing required fields');
+        }
         const response = await axios.get(`${API_BASE_URL}/all-users/${searchTerm}`);
         return response.data;
     } catch (error) {
