@@ -190,7 +190,7 @@ export default function SendPage() {
             </Pressable>
             <ThemedText style={styles.headerTitle}>Payment Details</ThemedText>
             <Badge variant="secondary" style={styles.balanceBadge}>
-              <ThemedText style={styles.badgeText}>Balance: {balance} XRP</ThemedText>
+              <ThemedText style={styles.badgeText}>Balance: {balance.toFixed(2)} XRP</ThemedText>
             </Badge>
           </View>
         </View>
@@ -209,12 +209,6 @@ export default function SendPage() {
                   <ThemedText style={styles.recipientName}>{selectedRecipient?.name}</ThemedText>
                   <ThemedText style={styles.username}>@{selectedRecipient?.username}</ThemedText>
                 </View>
-                <Pressable 
-                  style={[styles.button, styles.outlineButton]} 
-                  onPress={goBack}
-                >
-                  <ThemedText style={styles.outlineButtonText}>Change</ThemedText>
-                </Pressable>
               </View>
             </CardContent>
           </Card>
@@ -242,6 +236,12 @@ export default function SendPage() {
                 <View style={styles.labelContainer}>
                   <MaterialIcons name="access-time" size={16} color="#4B5563" />
                   <ThemedText style={styles.label}>Handshake Duration (seconds)</ThemedText>
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Pressable style={styles.button} onPress={()=>{setDurationSeconds("0")}}>
+                    <ThemedText style={styles.sendText}>Send now</ThemedText>
+                  </Pressable>
+                  <ThemedText style={styles.orText}>or</ThemedText>
                 </View>
                 <TextInput
                   placeholder="Enter duration..."
@@ -303,7 +303,7 @@ export default function SendPage() {
         <View style={styles.headerContent}>
           <ThemedText style={styles.headerTitle}>Send to</ThemedText>
           <Badge variant="secondary" style={styles.balanceBadge}>
-            <ThemedText style={styles.badgeText}>Balance: {balance} XRP</ThemedText>
+            <ThemedText style={styles.badgeText}>Balance: {balance.toFixed(2)} XRP</ThemedText>
           </Badge>
         </View>
 
@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   userCard: {
+    paddingTop: 12,
     marginBottom: 8,
     backgroundColor: "#fff",
   },
@@ -538,12 +539,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+  sendText: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "600",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   outlineButtonText: {
     color: "#374151",
     fontSize: 14,
     fontWeight: "500",
+    height: 20,
   },
   balanceBadge: {
+    marginLeft: 8,
     backgroundColor: "#DBEAFE",
   },
   badgeText: {
@@ -555,7 +568,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#DBEAFE",
   },
   inputContainer: {
-    marginBottom: 24,
+    paddingTop: 12,
+    marginBottom: 12,
   },
   labelContainer: {
     flexDirection: "row",
@@ -621,6 +635,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  buttonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
   noResults: {
     alignItems: "center",
     paddingVertical: 32,
@@ -675,6 +695,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   recipientName: {
+    marginTop: 24,
     fontWeight: "600",
     fontSize: 16,
     color: "#333",
@@ -709,5 +730,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#EF4444",
     marginLeft: 8,
+  },
+  orText: {
+    color: "#333",
+    fontSize: 14,
+    fontWeight: "500",
   },
 })
