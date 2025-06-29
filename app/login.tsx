@@ -19,6 +19,7 @@ export type User = {
     xrp_seed: string;
     xrp_public_key: string;
     xrp_secret: string;
+    friends: string[];
   };
 };
 

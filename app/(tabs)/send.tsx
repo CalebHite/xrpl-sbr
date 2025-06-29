@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ThemedText"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Badge } from "@/components/ui/Badge"
 import { Card, CardContent } from "@/components/ui/Card"
-import { getBalance, searchUsers } from "@/scripts/account"
+import { getBalance, getUser, searchUsers } from "@/scripts/account"
 import { Feather, MaterialIcons } from "@expo/vector-icons"
 import { useEffect, useState } from "react"
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native"
@@ -34,6 +34,8 @@ export default function SendPage() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [balance, setBalance] = useState(0)
   const [recipientBalance, setRecipientBalance] = useState(0)
+  const [friends, setFriends] = useState<UserProfile[]>([])
+  const [loadingFriends, setLoadingFriends] = useState(false)
 
   // Load user balance
   useEffect(() => {
@@ -64,6 +66,35 @@ export default function SendPage() {
     }
     loadRecipientBalance()
   }, [selectedRecipient?.xrplAddress])
+
+  // Load friends list
+  useEffect(() => {
+    const loadFriends = async () => {
+      if (user?.app_metadata?.friends) {
+        setLoadingFriends(true)
+        try {
+          const responses = await Promise.all(
+            user.app_metadata.friends.map(async friendId => {
+              const data = await getUser(friendId)
+              return data
+            })
+          )
+          setFriends(responses.map(response => ({
+            id: response.data.user_id,
+            name: response.data.name,
+            username: response.data.username || response.data.nickname,
+            avatar: response.data.picture,
+            xrplAddress: response.data.app_metadata?.xrp_address || '',
+          })))
+        } catch (error) {
+          console.error('Failed to load friends:', error)
+        } finally {
+          setLoadingFriends(false)
+        }
+      }
+    }
+    loadFriends()
+  }, [user?.app_metadata?.friends])
 
   // Handle search
   useEffect(() => {
@@ -334,6 +365,39 @@ export default function SendPage() {
                 Your recent transactions will appear here
               </ThemedText>
             </View>
+            <View style={styles.friendsContainer}>
+              <View style={styles.friendsHeader}>
+                <MaterialIcons name="people" size={16} color="#4B5563" />
+                <ThemedText style={styles.sectionTitle}>Friends</ThemedText>
+              </View>
+              {loadingFriends ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <ThemedText style={styles.loadingText}>Loading friends...</ThemedText>
+                </View>
+              ) : friends.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.friendsScroll}>
+                  {friends.map((friend) => (
+                    <Pressable key={friend.id} onPress={() => handleUserSelect(friend)} style={styles.friendAvatar}>
+                      <Avatar style={styles.friendAvatarImage}>
+                        <AvatarImage uri={friend.avatar} />
+                        <AvatarFallback>
+                          <MaterialIcons name="person" size={20} color="#6B7280" />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={styles.noResults}>
+                  <MaterialIcons name="people" size={48} color="#D1D5DB" />
+                  <ThemedText style={styles.noResultsTitle}>No friends yet</ThemedText>
+                  <ThemedText style={styles.noResultsSubtitle}>
+                    Add friends to send them XRP quickly
+                  </ThemedText>
+                </View>
+              )}
+            </View>
           </View>
         )}
 
@@ -344,7 +408,7 @@ export default function SendPage() {
               <ThemedText style={styles.sectionTitle}>Search Results</ThemedText>
               {!isSearching && (
                 <Badge variant="secondary" style={styles.countBadge}>
-                  <ThemedText>{searchResults.length}</ThemedText>
+                  <ThemedText style={styles.searchCount}>{searchResults.length}</ThemedText>
                 </Badge>
               )}
             </View>
@@ -561,6 +625,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
+    fontWeight: "600",
     color: "#1D4ED8",
   },
   countBadge: {
@@ -735,5 +800,32 @@ const styles = StyleSheet.create({
     color: "#333",
     fontSize: 14,
     fontWeight: "500",
+  },
+  searchCount: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1D4ED8",
+  },
+  friendsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  friendsContainer: {
+    marginTop: 16,
+  },
+  friendsScroll: {
+    marginTop: 12,
+  },
+  friendAvatar: {
+    marginRight: 12,
+  },
+  friendAvatarImage: {
+    width: 48,
+    height: 48,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 24,
   },
 })

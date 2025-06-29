@@ -104,7 +104,8 @@ async function login(userName, password) {
                 xrp_address: user.app_metadata?.xrp_address || '',
                 xrp_seed: user.app_metadata?.xrp_seed || '',
                 xrp_public_key: user.app_metadata?.xrp_public_key || '',
-                xrp_secret: user.app_metadata?.xrp_secret || ''
+                xrp_secret: user.app_metadata?.xrp_secret || '',
+                friends: user.app_metadata?.friends || []
             }
         };
     } catch (error) {

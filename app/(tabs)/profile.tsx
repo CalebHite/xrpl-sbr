@@ -1,55 +1,38 @@
 "use client"
 
-import { getBalance } from '@/scripts/account';
+import { getBalance, getUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
+interface Transaction {
+  id: string;
+  type: 'sent' | 'received';
+  amount: number;
+  date: string;
+  status: 'completed' | 'pending';
+  recipient?: string;
+  sender?: string;
+}
+
+interface Friend {
+  name: string;
+  username: string;
+  picture: string;
+}
+
 export default function Profile () {
   const [showFullAddress, setShowFullAddress] = useState(false)
   const [balance, setBalance] = useState(0);
+  const [showFriends, setShowFriends] = useState(false);
+  const [friendsData, setFriendsData] = useState<Friend[]>([]);
+  const [friendsCount, setFriendsCount] = useState(0);
 
   const user = useUser().user;
 
-  const mockTransactions = [
-    {
-      id: "1",
-      type: "sent",
-      amount: 50.0,
-      recipient: "Alice Smith",
-      date: "2024-01-15",
-      status: "completed",
-    },
-    {
-      id: "2",
-      type: "received",
-      amount: 125.5,
-      sender: "Bob Johnson",
-      date: "2024-01-14",
-      status: "completed",
-    },
-    {
-      id: "3",
-      type: "sent",
-      amount: 25.0,
-      recipient: "Charlie Brown",
-      date: "2024-01-13",
-      status: "pending",
-    },
-    {
-      id: "4",
-      type: "received",
-      amount: 200.0,
-      sender: "Diana Prince",
-      date: "2024-01-12",
-      status: "completed",
-    },
+  const mockTransactions: Transaction[] = [
   ];
-
-  const handleFriendsPress = () => {
-    Alert.alert("Friends", "Navigate to friends list screen")
-  }
 
   const handleSettingsPress = () => {
     Alert.alert("Settings", "Navigate to settings screen")
@@ -80,10 +63,44 @@ export default function Profile () {
     getBalance(user?.app_metadata?.xrp_address || "").then((data) => {
       setBalance(data.data.balance);
     });
+
+    console.log(user?.app_metadata?.friends);
+
+    if (user?.app_metadata?.friends) {
+      Promise.all(user.app_metadata.friends.map(async friend => {
+        const data = await getUser(friend);
+        return data;
+      })).then(responses => {
+        setFriendsData(responses.map(response => response.data));
+        setFriendsCount(responses.length);
+        console.log(friendsData);
+      });
+    }
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
+      {showFriends ? (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.friendsHeader}>
+            <TouchableOpacity onPress={()=>{setShowFriends(false)}}>
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Friends</Text>
+          </View>
+          {friendsData.map((friend, index) => (
+            <View key={index} style={styles.friendItem}>
+              <View style={styles.friendInfo}>
+                <Image source={{ uri: friend.picture }} style={styles.friendAvatar} />
+              <View style={styles.friendNameContainer}>
+                <Text style={styles.friendName}>{friend.name}</Text>
+                <Text style={styles.friendUsername}>@{friend.username}</Text>
+              </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      ) : 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Settings */}
         <View style={styles.header}>
@@ -111,11 +128,11 @@ export default function Profile () {
         </View>
 
         {/* Friends Count */}
-        <TouchableOpacity style={styles.friendsSection} onPress={handleFriendsPress}>
+        <TouchableOpacity style={styles.friendsSection} onPress={()=>{setShowFriends(!showFriends)}}>
           <View style={styles.friendsContent}>
             <Ionicons name="people-outline" size={24} color="#007AFF" />
             <View style={styles.friendsText}>
-              <Text style={styles.friendsCount}>{0}</Text>
+              <Text style={styles.friendsCount}>{friendsCount}</Text>
               <Text style={styles.friendsLabel}>Friends</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#999" />
@@ -177,6 +194,7 @@ export default function Profile () {
           ))}
         </View>
       </ScrollView>
+      }
     </SafeAreaView>
   )
 }
@@ -366,5 +384,41 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     textTransform: "capitalize",
+  },
+  friendItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  friendInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  friendsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#fff",
+    gap: 16,
+  },
+  friendAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  friendNameContainer: {
+    flexDirection: "column",
+  },
+  friendName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  friendUsername: {
+    fontSize: 14,
+    color: "#007AFF",
+    marginTop: 2,
   },
 })
