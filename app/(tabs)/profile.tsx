@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
 const API_BASE_URL = __DEV__ 
@@ -38,7 +38,8 @@ export default function Profile () {
   const [friendsData, setFriendsData] = useState<Friend[]>([]);
   const [friendsCount, setFriendsCount] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-
+  const [showChangeName, setShowChangeName] = useState(false);
+  const [newName, setNewName] = useState('');
 
   const user = useUser().user;
 
@@ -110,6 +111,24 @@ export default function Profile () {
       currency: "USD",
     }).format(amount)
   }
+
+  const handleNameChange = async () => {
+    if (!newName.trim() || !user?.username) return;
+    
+    try {
+      await updateUser(user.username, {
+        name: newName,
+        picture: user.picture,
+        phone_number: user.phone_number
+      });
+      setShowChangeName(false);
+      // Force a page refresh to show the updated name
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to update name:', error);
+      Alert.alert('Error', 'Failed to update name');
+    }
+  };
 
   useEffect(() => {
     getBalance(user?.app_metadata?.xrp_address || "").then((data) => {
@@ -183,8 +202,20 @@ export default function Profile () {
           </View>
 
           {/* Name and Username */}
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.username}>{user?.username}</Text>
+          <View style={styles.nameContainer}>
+            <TextInput 
+              style={styles.name}
+              value={showChangeName ? newName : user?.name}
+              onChangeText={setNewName}
+              onFocus={() => {
+                setShowChangeName(true);
+                setNewName(user?.name || '');
+              }}
+              onBlur={handleNameChange}
+              onSubmitEditing={handleNameChange}
+            />
+          </View>
+          <Text style={styles.username}>@{user?.username}</Text>
         </View>
 
         {/* Account Balance */}
@@ -313,15 +344,19 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
   },
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   name: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 4,
   },
   username: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#333",
   },
   balanceSection: {
     backgroundColor: "#fff",
@@ -456,11 +491,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  friendInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
   friendsHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -494,5 +524,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 100,
     padding: 8,
+  },
+  editNameButton: {
+    marginLeft: 4,
+    padding: 4,
+  },
+  changeNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  changeNameInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    backgroundColor: '#fff',
+  },
+  saveNameButton: {
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+  },
+  friendInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
 })
