@@ -1,10 +1,19 @@
 "use client"
 
-import { getBalance, getUser } from '@/scripts/account';
+import { getBalance, getUser, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
+import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
+
+const API_BASE_URL = __DEV__ 
+    ? Constants.expoConfig?.hostUri 
+        ? `http://${Constants.expoConfig.hostUri.split(':').shift()}:3000`
+        : 'http://localhost:3000'
+    : 'http://your-production-api.com';
 
 interface Transaction {
   id: string;
@@ -28,15 +37,58 @@ export default function Profile () {
   const [showFriends, setShowFriends] = useState(false);
   const [friendsData, setFriendsData] = useState<Friend[]>([]);
   const [friendsCount, setFriendsCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+
 
   const user = useUser().user;
+
+  const [image, setImage] = useState<string | undefined>(user?.picture);
+
 
   const mockTransactions: Transaction[] = [
   ];
 
-  const handleSettingsPress = () => {
-    Alert.alert("Settings", "Navigate to settings screen")
-  }
+  const convertImageToBase64 = async (uri: string) => {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return `data:image/jpeg;base64,${base64}`;
+    } catch (error) {
+      console.error('Error converting image:', error);
+      throw error;
+    }
+  };
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5, // Reduced quality to keep base64 string smaller
+    });
+  
+    if (!result.canceled) {
+      try {
+        setImage(result.assets[0].uri);
+        const base64Image = await convertImageToBase64(result.assets[0].uri);
+        console.log(base64Image);
+        
+        if (user?.username) {
+          await updateUser(user.username, {
+            picture: base64Image,
+            name: user.name,
+            phone_number: user.phone_number
+          });
+          console.log("User updated with base64 image");
+        }
+      } catch (error) {
+        console.error('Failed to update profile picture:', error);
+        Alert.alert('Error', 'Failed to update profile picture');
+        setImage(user?.picture); // Revert to original image on failure
+      }
+    }
+  };
 
   const handleTransactionPress = (transaction: any) => {
     Alert.alert(
@@ -101,11 +153,22 @@ export default function Profile () {
           ))}
         </ScrollView>
       ) : 
+
+      showSettings ? (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={()=>{setShowSettings(false)}}>
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Settings</Text>
+          </View>
+        </ScrollView>
+      ) : (
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Settings */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity onPress={handleSettingsPress} style={styles.settingsButton}>
+          <TouchableOpacity onPress={()=>{setShowSettings(!showSettings)}} style={styles.settingsButton}>
             <Ionicons name="settings-outline" size={24} color="#333" />
           </TouchableOpacity>
         </View>
@@ -113,7 +176,10 @@ export default function Profile () {
         {/* Profile Picture */}
         <View style={styles.profileSection}>
           <View style={styles.profilePictureContainer}>
-            <Image source={{ uri: user?.picture }} style={styles.profilePicture} />
+            <Image source={{ uri: image || user?.picture }} style={styles.profilePicture} />
+            <TouchableOpacity style={styles.changeAvatarButton} onPress={()=>{pickImage()}}>
+              <Ionicons name="camera-outline" size={24} color="#333" />
+            </TouchableOpacity>
           </View>
 
           {/* Name and Username */}
@@ -194,7 +260,7 @@ export default function Profile () {
           ))}
         </View>
       </ScrollView>
-      }
+      )}
     </SafeAreaView>
   )
 }
@@ -420,5 +486,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#007AFF",
     marginTop: 2,
+  },
+  changeAvatarButton: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderRadius: 100,
+    padding: 8,
   },
 })
