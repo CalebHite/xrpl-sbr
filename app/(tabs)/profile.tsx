@@ -1,6 +1,6 @@
 "use client"
 
-import { getBalance, getUser, updateUser } from '@/scripts/account';
+import { getUser, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
@@ -15,39 +15,13 @@ const API_BASE_URL = __DEV__
         : 'http://localhost:3000'
     : 'http://your-production-api.com';
 
-interface Transaction {
-  id: string;
-  type: 'sent' | 'received';
-  amount: number;
-  date: string;
-  status: 'completed' | 'pending';
-  recipient?: string;
-  sender?: string;
-}
-
-interface Friend {
-  name: string;
-  username: string;
-  picture: string;
-}
-
-export default function Profile () {
-  const [showFullAddress, setShowFullAddress] = useState(false)
-  const [balance, setBalance] = useState(0);
-  const [showFriends, setShowFriends] = useState(false);
-  const [friendsData, setFriendsData] = useState<Friend[]>([]);
-  const [friendsCount, setFriendsCount] = useState(0);
+export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
-  const [showChangeName, setShowChangeName] = useState(false);
-  const [newName, setNewName] = useState('');
+  const [showChangeBio, setShowChangeBio] = useState(false);
+  const [newBio, setNewBio] = useState('');
+  const { user, setUser } = useUser();
 
-  const user = useUser().user;
-
-  const [image, setImage] = useState<string | undefined>(user?.picture);
-
-
-  const mockTransactions: Transaction[] = [
-  ];
+  const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
 
   const convertImageToBase64 = async (uri: string) => {
     try {
@@ -66,114 +40,77 @@ export default function Profile () {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.5, // Reduced quality to keep base64 string smaller
+      quality: 0.5,
     });
   
     if (!result.canceled) {
       try {
         setImage(result.assets[0].uri);
         const base64Image = await convertImageToBase64(result.assets[0].uri);
-        console.log(base64Image);
         
-        if (user?.username) {
-          await updateUser(user.username, {
-            picture: base64Image,
-            name: user.name,
-            phone_number: user.phone_number
+        await updateUser({
+          avatar: base64Image
+        });
+        
+        // Update local user state
+        if (user) {
+          setUser({
+            ...user,
+            metadata: {
+              ...user.metadata,
+              profile: {
+                ...user.metadata.profile,
+                avatar: base64Image
+              }
+            }
           });
-          console.log("User updated with base64 image");
         }
       } catch (error) {
         console.error('Failed to update profile picture:', error);
         Alert.alert('Error', 'Failed to update profile picture');
-        setImage(user?.picture); // Revert to original image on failure
+        setImage(user?.metadata.profile.avatar);
       }
     }
   };
 
-  const handleTransactionPress = (transaction: any) => {
-    Alert.alert(
-      "Transaction Details",
-      `${transaction.type === "sent" ? "Sent to" : "Received from"}: ${
-        transaction.recipient || transaction.sender
-      }\nAmount: $${transaction.amount}\nDate: ${transaction.date}\nStatus: ${transaction.status}`,
-    )
-  }
-
-  const truncateAddress = (address: string) => {
-    if (showFullAddress) return address
-    return `${address.slice(0, 8)}...${address.slice(-8)}`
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
-
-  const handleNameChange = async () => {
-    if (!newName.trim() || !user?.username) return;
+  const handleBioChange = async () => {
+    if (!user) return;
     
     try {
-      await updateUser(user.username, {
-        name: newName,
-        picture: user.picture,
-        phone_number: user.phone_number
+      await updateUser({
+        bio: newBio
       });
-      setShowChangeName(false);
-      // Force a page refresh to show the updated name
-      window.location.reload();
+      
+      // Update local user state
+      setUser({
+        ...user,
+        metadata: {
+          ...user.metadata,
+          profile: {
+            ...user.metadata.profile,
+            bio: newBio
+          }
+        }
+      });
+      setShowChangeBio(false);
     } catch (error) {
-      console.error('Failed to update name:', error);
-      Alert.alert('Error', 'Failed to update name');
+      console.error('Failed to update bio:', error);
+      Alert.alert('Error', 'Failed to update bio');
     }
   };
 
   useEffect(() => {
-    getBalance(user?.app_metadata?.xrp_address || "").then((data) => {
-      setBalance(data.data.balance);
+    // Refresh user data
+    getUser().then((userData) => {
+      setUser(userData);
+    }).catch(error => {
+      console.error('Failed to fetch user data:', error);
     });
-
-    console.log(user?.app_metadata?.friends);
-
-    if (user?.app_metadata?.friends) {
-      Promise.all(user.app_metadata.friends.map(async friend => {
-        const data = await getUser(friend);
-        return data;
-      })).then(responses => {
-        setFriendsData(responses.map(response => response.data));
-        setFriendsCount(responses.length);
-        console.log(friendsData);
-      });
-    }
   }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      {showFriends ? (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.friendsHeader}>
-            <TouchableOpacity onPress={()=>{setShowFriends(false)}}>
-              <Ionicons name="arrow-back" size={24} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Friends</Text>
-          </View>
-          {friendsData.map((friend, index) => (
-            <View key={index} style={styles.friendItem}>
-              <View style={styles.friendInfo}>
-                <Image source={{ uri: friend.picture }} style={styles.friendAvatar} />
-              <View style={styles.friendNameContainer}>
-                <Text style={styles.friendName}>{friend.name}</Text>
-                <Text style={styles.friendUsername}>@{friend.username}</Text>
-              </View>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      ) : 
-
-      showSettings ? (
+      {showSettings ? (
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={()=>{setShowSettings(false)}}>
@@ -181,119 +118,100 @@ export default function Profile () {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Settings</Text>
           </View>
+          <View style={styles.settingsSection}>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Theme</Text>
+              <Text style={styles.settingValue}>{user?.metadata.preferences.theme}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Notifications</Text>
+              <Text style={styles.settingValue}>{user?.metadata.preferences.notifications ? 'Enabled' : 'Disabled'}</Text>
+            </View>
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Email</Text>
+              <Text style={styles.settingValue}>{user?.metadata.email}</Text>
+            </View>
+          </View>
         </ScrollView>
       ) : (
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header with Settings */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity onPress={()=>{setShowSettings(!showSettings)}} style={styles.settingsButton}>
-            <Ionicons name="settings-outline" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Picture */}
-        <View style={styles.profileSection}>
-          <View style={styles.profilePictureContainer}>
-            <Image source={{ uri: image || user?.picture }} style={styles.profilePicture} />
-            <TouchableOpacity style={styles.changeAvatarButton} onPress={()=>{pickImage()}}>
-              <Ionicons name="camera-outline" size={24} color="#333" />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Profile</Text>
+            <TouchableOpacity onPress={()=>{setShowSettings(!showSettings)}} style={styles.settingsButton}>
+              <Ionicons name="settings-outline" size={24} color="#333" />
             </TouchableOpacity>
           </View>
 
-          {/* Name and Username */}
-          <View style={styles.nameContainer}>
-            <TextInput 
-              style={styles.name}
-              value={showChangeName ? newName : user?.name}
-              onChangeText={setNewName}
-              onFocus={() => {
-                setShowChangeName(true);
-                setNewName(user?.name || '');
-              }}
-              onBlur={handleNameChange}
-              onSubmitEditing={handleNameChange}
-            />
-          </View>
-          <Text style={styles.username}>@{user?.username}</Text>
-        </View>
-
-        {/* Account Balance */}
-        <View style={styles.balanceSection}>
-          <Text style={styles.balanceLabel}>Account Balance</Text>
-          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
-        </View>
-
-        {/* Friends Count */}
-        <TouchableOpacity style={styles.friendsSection} onPress={()=>{setShowFriends(!showFriends)}}>
-          <View style={styles.friendsContent}>
-            <Ionicons name="people-outline" size={24} color="#007AFF" />
-            <View style={styles.friendsText}>
-              <Text style={styles.friendsCount}>{friendsCount}</Text>
-              <Text style={styles.friendsLabel}>Friends</Text>
+          <View style={styles.profileSection}>
+            <View style={styles.profilePictureContainer}>
+              <Image source={{ uri: image || user?.metadata.profile.avatar }} style={styles.profilePicture} />
+              <TouchableOpacity style={styles.changeAvatarButton} onPress={pickImage}>
+                <Ionicons name="camera-outline" size={24} color="#333" />
+              </TouchableOpacity>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </View>
-        </TouchableOpacity>
 
-        {/* XRPL Address */}
-        <View style={styles.addressSection}>
-          <Text style={styles.addressLabel}>XRPL Address</Text>
-          <TouchableOpacity style={styles.addressContainer} onPress={() => setShowFullAddress(!showFullAddress)}>
-            <Text style={styles.addressText}>{truncateAddress(user?.app_metadata?.xrp_address || "")}</Text>
-            <Ionicons name={showFullAddress ? "eye-off-outline" : "eye-outline"} size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Transactions Section */}
-        <View style={styles.transactionsSection}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {mockTransactions.map((transaction) => (
-            <TouchableOpacity
-              key={transaction.id}
-              style={styles.transactionItem}
-              onPress={() => handleTransactionPress(transaction)}
+            <Text style={styles.username}>@{user?.username}</Text>
+            
+            <TouchableOpacity 
+              style={styles.bioContainer}
+              onPress={() => {
+                setShowChangeBio(true);
+                setNewBio(user?.metadata.profile.bio || '');
+              }}
             >
-              <View style={styles.transactionIcon}>
-                <Ionicons
-                  name={transaction.type === "sent" ? "arrow-up" : "arrow-down"}
-                  size={20}
-                  color={transaction.type === "sent" ? "#FF3B30" : "#34C759"}
+              {showChangeBio ? (
+                <TextInput
+                  style={styles.bioInput}
+                  value={newBio}
+                  onChangeText={setNewBio}
+                  placeholder="Write something about yourself..."
+                  multiline
+                  onBlur={handleBioChange}
+                  onSubmitEditing={handleBioChange}
                 />
-              </View>
-
-              <View style={styles.transactionDetails}>
-                <Text style={styles.transactionTitle}>
-                  {transaction.type === "sent"
-                    ? `Sent to ${transaction.recipient}`
-                    : `Received from ${transaction.sender}`}
-                </Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
-              </View>
-
-              <View style={styles.transactionAmount}>
-                <Text
-                  style={[styles.transactionAmountText, { color: transaction.type === "sent" ? "#FF3B30" : "#34C759" }]}
-                >
-                  {transaction.type === "sent" ? "-" : "+"}
-                  {formatCurrency(transaction.amount)}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: transaction.status === "completed" ? "#34C759" : "#FF9500" },
-                  ]}
-                >
-                  <Text style={styles.statusText}>{transaction.status}</Text>
-                </View>
-              </View>
+              ) : (
+                <Text style={styles.bio}>{user?.metadata.profile.bio || 'Add a bio...'}</Text>
+              )}
             </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+          </View>
+
+          <View style={styles.statsSection}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{user?.metadata.profile.followers.length}</Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{user?.metadata.profile.following.length}</Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{user?.metadata.profile.views}</Text>
+              <Text style={styles.statLabel}>Views</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{user?.metadata.profile.trades}</Text>
+              <Text style={styles.statLabel}>Trades</Text>
+            </View>
+          </View>
+
+          <View style={styles.videosSection}>
+            <Text style={styles.sectionTitle}>Videos</Text>
+            {user?.metadata.videos.length === 0 ? (
+              <Text style={styles.noContent}>No videos yet</Text>
+            ) : (
+              <View style={styles.videoGrid}>
+                {user?.metadata.videos.map((video, index) => (
+                  <View key={index} style={styles.videoItem}>
+                    <Image source={{ uri: video }} style={styles.videoThumbnail} />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </ScrollView>
       )}
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -344,216 +262,115 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
   },
-  nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 28,
+  username: {
+    fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-  },
-  username: {
-    fontSize: 16,
-    color: "#333",
-  },
-  balanceSection: {
-    backgroundColor: "#fff",
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    alignItems: "center",
-  },
-  balanceLabel: {
-    fontSize: 16,
-    color: "#666",
     marginBottom: 8,
   },
-  balanceAmount: {
-    fontSize: 36,
-    fontWeight: "bold",
-    color: "#007AFF",
+  bioContainer: {
+    width: "80%",
+    padding: 16,
   },
-  friendsSection: {
-    backgroundColor: "#fff",
-    marginBottom: 16,
+  bio: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
   },
-  friendsContent: {
+  bioInput: {
+    fontSize: 16,
+    color: "#333",
+    textAlign: "center",
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+  },
+  statsSection: {
     flexDirection: "row",
+    backgroundColor: "#fff",
+    padding: 20,
+    marginBottom: 16,
+    justifyContent: "space-around",
+  },
+  statItem: {
     alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
   },
-  friendsText: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  friendsCount: {
+  statValue: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },
-  friendsLabel: {
+  statLabel: {
     fontSize: 14,
     color: "#666",
+    marginTop: 4,
   },
-  addressSection: {
+  videosSection: {
     backgroundColor: "#fff",
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  addressLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
-  },
-  addressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f8f9fa",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  addressText: {
-    fontSize: 14,
-    fontFamily: "monospace",
-    color: "#333",
-    flex: 1,
-  },
-  transactionsSection: {
-    backgroundColor: "#fff",
-    paddingTop: 20,
-    marginBottom: 80,
+    padding: 20,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
-    paddingHorizontal: 20,
     marginBottom: 16,
   },
-  transactionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  transactionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f8f9fa",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  transactionDetails: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  transactionDate: {
-    fontSize: 14,
+  noContent: {
+    textAlign: "center",
     color: "#666",
-  },
-  transactionAmount: {
-    alignItems: "flex-end",
-  },
-  transactionAmountText: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
+    padding: 20,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
+  videoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -8,
   },
-  statusText: {
-    fontSize: 12,
-    color: "#fff",
-    fontWeight: "600",
-    textTransform: "capitalize",
+  videoItem: {
+    width: "33.33%",
+    padding: 8,
   },
-  friendItem: {
+  videoThumbnail: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: 8,
+  },
+  settingsSection: {
+    backgroundColor: "#fff",
+    marginTop: 16,
+  },
+  settingItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  friendsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: "#fff",
-    gap: 16,
-  },
-  friendAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  friendNameContainer: {
-    flexDirection: "column",
-  },
-  friendName: {
+  settingLabel: {
     fontSize: 16,
-    fontWeight: "bold",
     color: "#333",
   },
-  friendUsername: {
-    fontSize: 14,
-    color: "#007AFF",
-    marginTop: 2,
+  settingValue: {
+    fontSize: 16,
+    color: "#666",
   },
   changeAvatarButton: {
     position: "absolute",
-    top: 0,
+    bottom: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderRadius: 100,
+    borderRadius: 20,
     padding: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  editNameButton: {
-    marginLeft: 4,
-    padding: 4,
-  },
-  changeNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 16,
-    width: '100%',
-  },
-  changeNameInput: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    backgroundColor: '#fff',
-  },
-  saveNameButton: {
-    padding: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  friendInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-})
+});
+

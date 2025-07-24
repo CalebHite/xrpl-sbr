@@ -10,29 +10,34 @@ import { useUser } from './context/UserContext';
 
 export type User = {
   username: string;
-  name: string;
-  nickname: string;
-  picture: string;
-  phone_number: string;
-  app_metadata: {
-    xrp_address: string;
-    xrp_seed: string;
-    xrp_public_key: string;
-    xrp_secret: string;
-    friends: string[];
+  metadata: {
+    email: string;
+    dateOfBirth: string;
+    profile: {
+      bio: string;
+      avatar: string;
+      followers: string[];
+      following: string[];
+      views: number;
+      trades: number;
+    };
+    preferences: {
+      theme: 'light' | 'dark';
+      notifications: boolean;
+    };
+    videos: string[];
   };
 };
 
 interface ErrorResponse {
-  message: string;
+  error: string;
 }
 
 export default function Login() {
   const { setUser } = useUser();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [isSignup, setIsSignup] = useState(false);
 
   const handleLogin = async () => {
@@ -44,7 +49,7 @@ export default function Login() {
       console.log('Attempting login with:', { username, password: '***' });
       const user = await login(username, password);
       setUser(user);
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/explore');
     } catch (error: unknown) {
       console.error('Login error:', error);
       if (error instanceof Error) {
@@ -53,7 +58,7 @@ export default function Login() {
         const axiosError = error as AxiosError<ErrorResponse>;
         Alert.alert(
           'Error',
-          axiosError.response?.data?.message || 'Failed to login. Please check your credentials and try again.'
+          axiosError.response?.data?.error || 'Failed to login. Please check your credentials and try again.'
         );
       }
     }
@@ -61,19 +66,19 @@ export default function Login() {
 
   const handleSignup = async () => {
     try {
-      if (!username || !password || !name || !phoneNumber) {
+      if (!username || !password || !email) {
         Alert.alert('Error', 'Please fill in all fields');
         return;
       }
-      const user = await createUser(username, password, name, phoneNumber);
+      const user = await createUser(username, password, email);
       setUser(user);
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/explore');
     } catch (error: unknown) {
       console.error('Signup error:', error);
       const axiosError = error as AxiosError<ErrorResponse>;
       Alert.alert(
         'Error',
-        axiosError.response?.data?.message || 'Failed to create account. Please try again.'
+        axiosError.response?.data?.error || 'Failed to create account. Please try again.'
       );
     }
   };
@@ -132,17 +137,12 @@ export default function Login() {
         />
           <TextInput
             style={styles.input}
-            placeholder="Name"
-            value={name}
-            onChangeText={setName}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
             placeholderTextColor="#666"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            placeholderTextColor="#666"
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
           <ThemedText
             onPress={handleSignup}

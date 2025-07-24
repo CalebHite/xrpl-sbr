@@ -7,33 +7,28 @@ const API_BASE_URL = __DEV__
         : 'http://localhost:3000'
     : 'http://your-production-api.com';
 
-async function createUser(userName, password, name, phoneNumber) {
+async function createUser(username, password, email) {
     try {
-        if(!userName || !password || !name || !phoneNumber) {
+        if(!username || !password) {
             throw new Error('Missing required fields');
         }
-        if(phoneNumber.length !== 10 || !/^\d+$/.test(phoneNumber)) {
-            throw new Error('Invalid phone number. Format: 1234567890');
-        }
-        const response = await axios.post(`${API_BASE_URL}/user/`, {
-            userName,
+        const response = await axios.post(`${API_BASE_URL}/register`, {
+            username,
             password,
-            name,
-            phoneNumber: "+1" + phoneNumber
+            email,
+            theme: 'light',
+            notifications: true
         });
-        return response.data;
+        return response.data.user;
     } catch (error) {
         console.error('Failed to create user:', error);
         throw error;
     }
 }
 
-async function getUser(userName) {
+async function getUser() {
     try {
-        if(!userName) {
-            throw new Error('Missing required fields');
-        }
-        const response = await axios.get(`${API_BASE_URL}/user/${userName}`);
+        const response = await axios.get(`${API_BASE_URL}/api/user/metadata`);
         return response.data;
     } catch (error) {
         console.error('Failed to get user:', error);
@@ -41,25 +36,12 @@ async function getUser(userName) {
     }
 }
 
-async function deleteUser(userId) {
+async function updateUser(updates) {
     try {
-        if(!userId) {
+        if(!updates) {
             throw new Error('Missing required fields');
         }
-        const response = await axios.delete(`${API_BASE_URL}/user/${userId}`);
-        return response.data;
-    } catch (error) {
-        console.error('Failed to delete user:', error);
-        throw error;
-    }
-}
-
-async function updateUser(userId, updates) {
-    try {
-        if(!userId || !updates) {
-            throw new Error('Missing required fields');
-        }
-        const response = await axios.patch(`${API_BASE_URL}/user/${userId}`, updates);
+        const response = await axios.put(`${API_BASE_URL}/api/user/metadata`, updates);
         return response.data;
     } catch (error) {
         console.error('Failed to update user:', error);
@@ -67,67 +49,98 @@ async function updateUser(userId, updates) {
     }
 }
 
-async function searchUsers(searchTerm) {
+async function followUser(userId) {
     try {
-        if(!searchTerm) {
-            throw new Error('Missing required fields');
-        }
-        const response = await axios.get(`${API_BASE_URL}/all-users/${searchTerm}`);
+        const response = await axios.post(`${API_BASE_URL}/api/user/follow/${userId}`);
         return response.data;
     } catch (error) {
-        console.error('Failed to search users:', error);
+        console.error('Failed to follow user:', error);
         throw error;
     }
 }
 
-async function login(userName, password) {
+async function unfollowUser(userId) {
     try {
-        if(!userName || !password) {
+        const response = await axios.post(`${API_BASE_URL}/api/user/unfollow/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to unfollow user:', error);
+        throw error;
+    }
+}
+
+async function login(username, password) {
+    try {
+        if(!username || !password) {
             throw new Error('Missing required fields');
         }
-        const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-            userName,
+        const response = await axios.post(`${API_BASE_URL}/login`, {
+            username,
             password
         });
         
-        const { user, access_token } = response.data.data;
-
-        console.log(response.data.data);
-        
-        return {
-            username: user.username,
-            name: user.name,
-            nickname: user.name,
-            picture: user.picture,
-            phone_number: user.phone_number || '',
-            app_metadata: {
-                xrp_address: user.app_metadata?.xrp_address || '',
-                xrp_seed: user.app_metadata?.xrp_seed || '',
-                xrp_public_key: user.app_metadata?.xrp_public_key || '',
-                xrp_secret: user.app_metadata?.xrp_secret || '',
-                friends: user.app_metadata?.friends || []
-            }
-        };
+        return response.data.user;
     } catch (error) {
-        if (error.response && error.response.data && error.response.data.message) {
-            throw new Error(error.response.data.message);
+        if (error.response && error.response.data && error.response.data.error) {
+            throw new Error(error.response.data.error);
         }
         throw error;
     }
 }
 
-async function getBalance(address) {
+async function logout() {
     try {
-        const response = await axios.get(`${API_BASE_URL}/user/balance/${address}`);
+        const response = await axios.get(`${API_BASE_URL}/logout`);
         return response.data;
     } catch (error) {
-        console.error('Failed to get balance:', error);
+        console.error('Failed to logout:', error);
+        throw error;
+    }
+}
+
+async function addVideo(videoUrl) {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/user/videos`, {
+            videoUrl
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to add video:', error);
+        throw error;
+    }
+}
+
+async function incrementViews(userId) {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/user/${userId}/increment-views`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to increment views:', error);
+        throw error;
+    }
+}
+
+async function incrementTrades(userId) {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/api/user/${userId}/increment-trades`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to increment trades:', error);
         throw error;
     }
 }
 
 export {
-    createUser, deleteUser, getBalance, getUser, login, searchUsers, updateUser
+    addVideo,
+    createUser,
+    followUser,
+    getUser,
+    incrementTrades,
+    incrementViews,
+    login,
+    logout,
+    unfollowUser,
+    updateUser
 };
 
 
