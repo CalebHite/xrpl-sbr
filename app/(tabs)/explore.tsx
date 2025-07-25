@@ -45,6 +45,7 @@ export default function ExploreScreen() {
         style={styles.video}
         useNativeControls
         resizeMode={ResizeMode.CONTAIN}
+        shouldPlay={false}
         isLooping
       />
       <View style={styles.videoInfo}>
@@ -62,7 +63,7 @@ export default function ExploreScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator style={styles.loading} size="large" />
       </ThemedView>
     );
   }
@@ -139,5 +140,10 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     marginRight: 10,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 
