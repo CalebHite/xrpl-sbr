@@ -1,6 +1,6 @@
 "use client"
 
-import { getUser, updateUser } from '@/scripts/account';
+import { getUser, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
@@ -99,6 +99,16 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Failed to logout:', error);
+      Alert.alert('Error', 'Failed to logout');
+    }
+  };
+
   useEffect(() => {
     // Refresh user data
     getUser().then((userData) => {
@@ -131,6 +141,12 @@ export default function Profile() {
               <Text style={styles.settingLabel}>Email</Text>
               <Text style={styles.settingValue}>{user?.metadata.email}</Text>
             </View>
+            <TouchableOpacity 
+              style={[styles.settingItem, styles.logoutButton]} 
+              onPress={handleLogout}
+            >
+              <Text style={styles.logoutText}>Log Out</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       ) : (
@@ -371,6 +387,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  logoutButton: {
+    marginTop: 20,
+    backgroundColor: '#ff4444',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
