@@ -1,26 +1,41 @@
-import { clsx, type ClassValue } from "clsx"
-import * as React from "react"
+import { useThemeColor } from '@/hooks/useThemeColor';
+import React from 'react';
+import { StyleSheet, TextInput, TextInputProps } from 'react-native';
 
-function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+interface InputProps extends TextInputProps {
+  style?: any;
 }
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Input.displayName = "Input"
+export function Input({ style, ...props }: InputProps) {
+  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#1a1a1a' }, 'background');
+  const textColor = useThemeColor({ light: '#000000', dark: '#ffffff' }, 'text');
+  const placeholderColor = useThemeColor({ light: '#666666', dark: '#999999' }, 'text');
+  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#333333' }, 'border');
 
-export { Input }
+  return (
+    <TextInput
+      style={[
+        styles.input,
+        {
+          backgroundColor,
+          color: textColor,
+          borderColor,
+        },
+        style,
+      ]}
+      placeholderTextColor={placeholderColor}
+      {...props}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  input: {
+    height: 40,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+});
 
