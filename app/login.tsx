@@ -26,6 +26,11 @@ export type User = {
       notifications: boolean;
     };
     videos: string[];
+    wallet: {
+      seed: string;
+      address: string;
+      balance: number;
+    };
   };
 };
 

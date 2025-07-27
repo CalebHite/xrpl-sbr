@@ -1,5 +1,8 @@
+import { useUser } from '@/app/context/UserContext';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Button } from '@/components/ui/Button';
+import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useRef, useState } from 'react';
@@ -13,10 +16,16 @@ interface VideoItem {
   contentUrl: string;
   title: string;
   description?: string;
+  mptIssuanceId: string;
   creator?: {
     metadata?: {
       profile?: {
         avatar?: string;
+      };
+      wallet?: {
+        seed: string;
+        address: string;
+        balance: number;
       };
     };
   };
@@ -27,7 +36,10 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [focusedVideoId, setFocusedVideoId] = useState<string | null>(null);
+  const [isTradeOverlayVisible, setIsTradeOverlayVisible] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
+  const { user } = useUser();
 
   const onViewableItemsChanged = useRef(({ changed }: { changed: ViewToken[] }) => {
     changed.forEach((change) => {
@@ -63,6 +75,11 @@ export default function ExploreScreen() {
     }, [])
   );
 
+  const handleTradePress = (video: VideoItem) => {
+    setSelectedVideo(video);
+    setIsTradeOverlayVisible(true);
+  };
+
   const loadVideos = async () => {
     try {
       setLoading(true);
@@ -97,14 +114,35 @@ export default function ExploreScreen() {
         isMuted={item.videoId !== focusedVideoId}
       />
       <View style={styles.videoInfo}>
-        <Image source={{ uri:item.creator?.metadata?.profile?.avatar }} style={styles.avatar} />
-        <ThemedText style={styles.videoTitle}>{item.title}</ThemedText>
+        <View style={styles.videoHeader}>
+          <Image source={{ uri: item.creator?.metadata?.profile?.avatar }} style={styles.avatar} />
+          <ThemedText style={styles.videoTitle}>{item.title}</ThemedText>
+        </View>
         {item.description && (
           <ThemedText style={styles.videoDescription}>
             {item.description}
           </ThemedText>
         )}
+        <Button 
+          onPress={() => handleTradePress(item)}
+          style={styles.tradeButton}
+        >
+          Trade Token
+        </Button>
       </View>
+      
+      {selectedVideo && (
+        <TradeOverlay
+          isVisible={isTradeOverlayVisible}
+          onClose={() => {
+            setIsTradeOverlayVisible(false);
+            setSelectedVideo(null);
+          }}
+          videoId={selectedVideo.videoId}
+          mptIssuanceId={selectedVideo.mptIssuanceId}
+          xrplSeed={user?.metadata?.wallet?.seed || ''}
+        />
+      )}
     </View>
   );
 
@@ -165,19 +203,16 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 20,
   },
+  videoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   videoTitle: {
+    flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
     color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10
-  },
-  videoCreator: {
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 4,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10
@@ -185,6 +220,7 @@ const styles = StyleSheet.create({
   videoDescription: {
     fontSize: 14,
     color: '#fff',
+    marginBottom: 15,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10
@@ -204,5 +240,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  tradeButton: {
+    marginTop: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#fff',
+    borderWidth: 1,
   }
 }); 
