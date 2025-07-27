@@ -4,6 +4,7 @@ import { getUser, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -20,7 +21,6 @@ export default function Profile() {
   const [showChangeBio, setShowChangeBio] = useState(false);
   const [newBio, setNewBio] = useState('');
   const { user, setUser } = useUser();
-
   const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
 
   const convertImageToBase64 = async (uri: string) => {
@@ -45,8 +45,14 @@ export default function Profile() {
   
     if (!result.canceled) {
       try {
-        setImage(result.assets[0].uri);
-        const base64Image = await convertImageToBase64(result.assets[0].uri);
+        const manipResult = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [{ resize: { width: 300 } }],
+          { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+        );
+
+        setImage(manipResult.uri);
+        const base64Image = await convertImageToBase64(manipResult.uri);
         
         await updateUser({
           avatar: base64Image
