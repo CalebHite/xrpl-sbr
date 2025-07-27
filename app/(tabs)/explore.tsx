@@ -1,12 +1,12 @@
 import { useUser } from '@/app/context/UserContext';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Button } from '@/components/ui/Button';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, View, ViewToken } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
 import { fetchVideos } from '../../scripts/videos';
 
 const { height } = Dimensions.get('window');
@@ -113,6 +113,16 @@ export default function ExploreScreen() {
         isLooping
         isMuted={item.videoId !== focusedVideoId}
       />
+      <TouchableOpacity 
+        style={styles.tradeButton}
+        onPress={() => handleTradePress(item)}
+      >
+        <IconSymbol 
+          name="arrow.triangle.2.circlepath"
+          size={28}
+          color="#fff"
+        />
+      </TouchableOpacity>
       <View style={styles.videoInfo}>
         <View style={styles.videoHeader}>
           <Image source={{ uri: item.creator?.metadata?.profile?.avatar }} style={styles.avatar} />
@@ -123,12 +133,6 @@ export default function ExploreScreen() {
             {item.description}
           </ThemedText>
         )}
-        <Button 
-          onPress={() => handleTradePress(item)}
-          style={styles.tradeButton}
-        >
-          Trade Token
-        </Button>
       </View>
       
       {selectedVideo && (
@@ -242,9 +246,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tradeButton: {
-    marginTop: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderColor: '#fff',
-    borderWidth: 1,
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 }); 

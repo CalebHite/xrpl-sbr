@@ -109,7 +109,7 @@ export function TradeOverlay({ isVisible, onClose, videoId, mptIssuanceId, xrplS
                   disabled={loading}
                   style={styles.submitButton}
                 >
-                  {loading ? 'Processing...' : 'Confirm Trade'}
+                  {loading ? 'Processing...' : 'Confirm'}
                 </Button>
                 <Button
                   onPress={() => setMode(null)}
@@ -129,7 +129,6 @@ export function TradeOverlay({ isVisible, onClose, videoId, mptIssuanceId, xrplS
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
