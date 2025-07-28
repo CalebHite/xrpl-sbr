@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { getVideos } from '@/scripts/account';
+import { ResizeMode, Video } from 'expo-av';
+import React, { useEffect, useState } from 'react';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
 import { Button } from './Button';
@@ -47,8 +49,15 @@ export function UserProfileOverlay({
     trades: 0
   };
 
-  const videos = user?.metadata?.videos || [];
+  const [videos, setVideos] = useState<any[]>([]);
   const isFollowing = profile.followers.includes(currentUserId);
+
+  useEffect(() => {
+      getVideos(user?._id).then((videos) => {
+      setVideos(videos.videos);
+      console.log(videos);
+    });
+  }, [user]);
 
   const handleFollowAction = async () => {
     setLoading(true);
@@ -97,7 +106,7 @@ export function UserProfileOverlay({
                   isFollowing && styles.followingButton
                 ]}
               >
-                {loading ? 'Loading...' : (isFollowing ? 'Following' : 'Follow')}
+                {loading ? 'Following...' : (isFollowing ? 'Following' : 'Follow')}
               </Button>
 
               {error && (
@@ -136,6 +145,37 @@ export function UserProfileOverlay({
                 </ThemedText>
                 <ThemedText style={styles.statLabel}>Trades</ThemedText>
               </View>
+            </View>
+            <View style={styles.videosSection}>
+            <Text style={styles.sectionTitle}>Videos</Text>
+            <View style={styles.videosGrid}>
+              {videos.length > 0 ? (
+                videos.map((video, index) => (
+                  <TouchableOpacity 
+                    key={video._id || index}
+                    style={styles.videoItem}
+                    onPress={() => {
+                      // Handle video press
+                      console.log('Video pressed:', video);
+                    }}
+                  >
+                    <Video
+                      source={{ uri: video.contentUrl }}
+                      style={styles.videoThumbnail}
+                      useNativeControls={false}
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay={false}
+                      isLooping={false}
+                      isMuted={true}
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.noVideosContainer}>
+                  <Text style={styles.noVideosText}>No videos yet</Text>
+                </View>
+              )}
+            </View>
             </View>
           </ScrollView>
         </ThemedView>
@@ -215,5 +255,64 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     textAlign: 'center',
-  }
+  },
+  videosSection: {
+    padding: 16,
+  },
+  videosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  videoItem: {
+    width: '48%',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 120,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  videoInfo: {
+    padding: 8,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
+  },
+  videoViews: {
+    fontSize: 12,
+    color: '#666',
+  },
+  noVideosContainer: {
+    width: '100%',
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noVideosText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 16,
+  },
 }); 

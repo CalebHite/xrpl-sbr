@@ -114,6 +114,16 @@ async function addVideo(videoUrl) {
     }
 }
 
+async function getVideos(userId) {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/api/user/${userId}/videos`);
+        return response.data;
+    } catch (error) {
+        console.error('Failed to get videos:', error);
+        throw error;
+    }
+}
+
 async function incrementViews(userId) {
     try {
         const response = await axios.post(`${API_BASE_URL}/api/user/${userId}/increment-views`);
@@ -137,9 +147,7 @@ async function incrementTrades(userId) {
 export {
     addVideo,
     createUser,
-    followUser,
-    getUser,
-    incrementTrades,
+    followUser, getUser, getVideos, incrementTrades,
     incrementViews,
     login,
     logout,

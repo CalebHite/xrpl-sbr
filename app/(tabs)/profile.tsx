@@ -1,7 +1,8 @@
 "use client"
 
-import { getUser, logout, updateUser } from '@/scripts/account';
+import { getUser, getVideos, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
+import { ResizeMode, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,6 +16,14 @@ export default function Profile() {
   const [newBio, setNewBio] = useState('');
   const { user, setUser } = useUser();
   const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
+  const [videos, setVideos] = useState<any[]>([]);
+  
+  useEffect(() => {
+    getVideos(user?._id).then((videos) => {
+      setVideos(videos.videos);
+      console.log(videos);
+    });
+  }, [user]);
 
   const convertImageToBase64 = async (uri: string) => {
     try {
@@ -208,6 +217,38 @@ export default function Profile() {
               <Text style={styles.statLabel}>Trades</Text>
             </View>
           </View>
+
+          <View style={styles.videosSection}>
+            <Text style={styles.sectionTitle}>Videos</Text>
+            <View style={styles.videosGrid}>
+              {videos.length > 0 ? (
+                videos.map((video, index) => (
+                  <TouchableOpacity 
+                    key={video._id || index}
+                    style={styles.videoItem}
+                    onPress={() => {
+                      // Handle video press
+                      console.log('Video pressed:', video);
+                    }}
+                  >
+                    <Video
+                      source={{ uri: video.contentUrl }}
+                      style={styles.videoThumbnail}
+                      useNativeControls={false}
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay={false}
+                      isLooping={false}
+                      isMuted={true}
+                    />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={styles.noVideosContainer}>
+                  <Text style={styles.noVideosText}>No videos yet</Text>
+                </View>
+              )}
+            </View>
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -362,6 +403,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  videosSection: {
+    backgroundColor: '#fff',
+    padding: 16,
+  },
+  videosGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  videoItem: {
+    width: '48%',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  videoThumbnail: {
+    width: '100%',
+    height: 120,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+  },
+  videoInfo: {
+    padding: 8,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
+  },
+  videoViews: {
+    fontSize: 12,
+    color: '#666',
+  },
+  noVideosContainer: {
+    width: '100%',
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noVideosText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
 
