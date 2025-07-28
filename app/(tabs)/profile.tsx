@@ -2,7 +2,6 @@
 
 import { getUser, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
-import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,19 +9,12 @@ import { useEffect, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
-const API_BASE_URL = __DEV__ 
-    ? Constants.expoConfig?.hostUri 
-        ? `http://${Constants.expoConfig.hostUri.split(':').shift()}:3000`
-        : 'http://localhost:3000'
-    : 'http://your-production-api.com';
-
 export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
   const [showChangeBio, setShowChangeBio] = useState(false);
   const [newBio, setNewBio] = useState('');
   const { user, setUser } = useUser();
   const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
-  const [videos, setVideos] = useState<any[]>([]);
 
   const convertImageToBase64 = async (uri: string) => {
     try {
@@ -125,37 +117,6 @@ export default function Profile() {
     });
   }, []);
 
-  useEffect(() => {
-    // Fetch videos data
-    if (user?.metadata.videos.length) {
-      Promise.all(
-        user.metadata.videos.map(videoId =>
-          fetch(`${API_BASE_URL}/api/videos/${videoId}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.success && data.video) {
-                return data.video;
-              }
-              console.error('Invalid video data:', data);
-              return null;
-            })
-            .catch(error => {
-              console.error('Error fetching video:', error);
-              return null;
-            })
-        )
-      ).then(videosData => {
-        // Filter out any null values from failed requests
-        const validVideos = videosData.filter(video => video !== null);
-        setVideos(validVideos);
-      }).catch(error => {
-        console.error('Error fetching videos:', error);
-      });
-    } else {
-      setVideos([]);
-    }
-  }, [user?.metadata.videos]);
-
   return (
     <SafeAreaView style={styles.container}>
       {showSettings ? (
@@ -246,21 +207,6 @@ export default function Profile() {
               <Text style={styles.statValue}>{user?.metadata.profile.trades}</Text>
               <Text style={styles.statLabel}>Trades</Text>
             </View>
-          </View>
-
-          <View style={styles.videosSection}>
-            <Text style={styles.sectionTitle}>Videos</Text>
-            {!videos.length ? (
-              <Text style={styles.noContent}>No videos yet</Text>
-            ) : (
-              <View style={styles.videoGrid}>
-                {videos.map((video, index) => (
-                  <View key={index} style={styles.videoItem}>
-                    <Image source={{ uri: video.contentUrl }} style={styles.videoThumbnail} />
-                  </View>
-                ))}
-              </View>
-            )}
           </View>
         </ScrollView>
       )}
@@ -360,43 +306,13 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 4,
   },
-  videosSection: {
-    backgroundColor: "#fff",
-    padding: 20,
-    marginBottom: 20,
-  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 16,
   },
-  noContent: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    padding: 20,
-  },
-  videoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -8,
-  },
-  videoItem: {
-    width: "33.33%",
-    padding: 8,
-  },
-  videoThumbnail: {
-    width: "100%",
-    aspectRatio: 1,
-    borderRadius: 8,
-  },
-  videoTitle: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-    textAlign: 'center',
-  },
+
   settingsSection: {
     backgroundColor: "#fff",
     marginTop: 16,
