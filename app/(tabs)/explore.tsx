@@ -1,15 +1,22 @@
 import { useUser } from '@/app/context/UserContext';
+import { User } from '@/app/login';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
+import { UserProfileOverlay } from '@/components/ui/UserProfileOverlay';
+import { followUser, getUser, unfollowUser } from '@/scripts/account';
 import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Image, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
 import { fetchVideos } from '../../scripts/videos';
 
 const { height } = Dimensions.get('window');
+
+interface Creator extends User {
+  _id: string;
+}
 
 interface VideoItem {
   videoId: string;
@@ -17,18 +24,7 @@ interface VideoItem {
   title: string;
   description?: string;
   mptIssuanceId: string;
-  creator?: {
-    metadata?: {
-      profile?: {
-        avatar?: string;
-      };
-      wallet?: {
-        seed: string;
-        address: string;
-        balance: number;
-      };
-    };
-  };
+  creator: Creator;
 }
 
 export default function ExploreScreen() {
@@ -38,8 +34,10 @@ export default function ExploreScreen() {
   const [focusedVideoId, setFocusedVideoId] = useState<string | null>(null);
   const [isTradeOverlayVisible, setIsTradeOverlayVisible] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+  const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
-  const { user } = useUser();
+  const { user, setUser } = useUser();
 
   const onViewableItemsChanged = useRef(({ changed }: { changed: ViewToken[] }) => {
     changed.forEach((change) => {
@@ -80,6 +78,45 @@ export default function ExploreScreen() {
     setIsTradeOverlayVisible(true);
   };
 
+  const handleProfilePress = async (video: VideoItem) => {
+    try {
+      // Get the creator's full user data
+      const userData = await getUser(video.creator._id);
+      
+      // Create a properly formatted user object
+      const formattedCreator = {
+        ...video.creator,
+        metadata: {
+          email: userData.metadata.email || '',
+          dateOfBirth: userData.metadata.dateOfBirth || '',
+          profile: {
+            avatar: userData.metadata.profile.avatar || '',
+            bio: userData.metadata.profile.bio || '',
+            followers: userData.metadata.profile.followers || [],
+            following: userData.metadata.profile.following || [],
+            views: userData.metadata.profile.views || 0,
+            trades: userData.metadata.profile.trades || 0
+          },
+          preferences: {
+            theme: userData.metadata.preferences.theme || 'light',
+            notifications: userData.metadata.preferences.notifications || false
+          },
+          videos: userData.metadata.videos || [],
+          wallet: {
+            seed: userData.metadata.wallet.seed || '',
+            address: userData.metadata.wallet.address || '',
+            balance: userData.metadata.wallet.balance || 0
+          }
+        }
+      };
+      
+      setSelectedCreator(formattedCreator);
+      setIsProfileVisible(true);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
+
   const loadVideos = async () => {
     try {
       setLoading(true);
@@ -113,19 +150,30 @@ export default function ExploreScreen() {
         isLooping
         isMuted={item.videoId !== focusedVideoId}
       />
-      <TouchableOpacity 
-        style={styles.tradeButton}
-        onPress={() => handleTradePress(item)}
-      >
-        <IconSymbol 
-          name="arrow.triangle.2.circlepath"
-          size={28}
-          color="#fff"
-        />
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => handleTradePress(item)}
+        >
+          <IconSymbol 
+            name="arrow.triangle.2.circlepath"
+            size={28}
+            color="#fff"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => handleProfilePress(item)}
+        >
+          <IconSymbol 
+            name="person.fill"
+            size={28}
+            color="#fff"
+          />
+        </TouchableOpacity>
+      </View>
       <View style={styles.videoInfo}>
         <View style={styles.videoHeader}>
-          <Image source={{ uri: item.creator?.metadata?.profile?.avatar }} style={styles.avatar} />
           <ThemedText style={styles.videoTitle}>{item.title}</ThemedText>
         </View>
         {item.description && (
@@ -179,8 +227,49 @@ export default function ExploreScreen() {
         style={styles.list}
         onViewableItemsChanged={onViewableItemsChanged.current}
         viewabilityConfig={viewabilityConfig.current}
-        removeClippedSubviews={false} // Ensure videos stay loaded
+        removeClippedSubviews={false}
       />
+      
+      {selectedCreator && (
+        <UserProfileOverlay
+          isVisible={isProfileVisible}
+          onClose={() => {
+            setIsProfileVisible(false);
+            // Clear the selected creator after a short delay to allow the modal animation to complete
+            setTimeout(() => setSelectedCreator(null), 300);
+          }}
+          user={selectedCreator}
+          currentUserId={user?.username || ''}
+          onFollow={async () => {
+            if (selectedCreator._id) {
+              await followUser(selectedCreator._id);
+              // Get the updated current user data
+              const updatedUser = await getUser();
+              setUser(updatedUser.metadata);
+              // Refresh the selected creator's data
+              const updatedCreator = await getUser(selectedCreator._id);
+              setSelectedCreator(prevCreator => ({
+                ...prevCreator!,
+                metadata: updatedCreator.metadata
+              }));
+            }
+          }}
+          onUnfollow={async () => {
+            if (selectedCreator._id) {
+              await unfollowUser(selectedCreator._id);
+              // Get the updated current user data
+              const updatedUser = await getUser();
+              setUser(updatedUser.metadata);
+              // Refresh the selected creator's data
+              const updatedCreator = await getUser(selectedCreator._id);
+              setSelectedCreator(prevCreator => ({
+                ...prevCreator!,
+                metadata: updatedCreator.metadata
+              }));
+            }
+          }}
+        />
+      )}
     </ThemedView>
   );
 }
@@ -235,10 +324,12 @@ const styles = StyleSheet.create({
     margin: 20,
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 10,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   loading: {
     flex: 1,
@@ -250,6 +341,21 @@ const styles = StyleSheet.create({
     top: 50,
     right: 20,
     zIndex: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 1,
+    gap: 10,
+  },
+  iconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,

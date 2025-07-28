@@ -9,6 +9,7 @@ import { createUser, login } from '@/scripts/account';
 import { useUser } from './context/UserContext';
 
 export type User = {
+  _id: string;
   username: string;
   metadata: {
     email: string;

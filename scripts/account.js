@@ -26,9 +26,13 @@ async function createUser(username, password, email) {
     }
 }
 
-async function getUser() {
+async function getUser(userId) {
     try {
-        const response = await axios.get(`${API_BASE_URL}/api/user/metadata`);
+        const endpoint = userId 
+            ? `${API_BASE_URL}/api/user/${userId}/metadata`
+            : `${API_BASE_URL}/api/user/metadata`;
+        const response = await axios.get(endpoint);
+        console.log('getUser response:', response.data.metadata);
         return response.data;
     } catch (error) {
         console.error('Failed to get user:', error);

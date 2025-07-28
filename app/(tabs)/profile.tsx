@@ -22,6 +22,7 @@ export default function Profile() {
   const [newBio, setNewBio] = useState('');
   const { user, setUser } = useUser();
   const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
+  const [videos, setVideos] = useState<any[]>([]);
 
   const convertImageToBase64 = async (uri: string) => {
     try {
@@ -124,6 +125,37 @@ export default function Profile() {
     });
   }, []);
 
+  useEffect(() => {
+    // Fetch videos data
+    if (user?.metadata.videos.length) {
+      Promise.all(
+        user.metadata.videos.map(videoId =>
+          fetch(`${API_BASE_URL}/api/videos/${videoId}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success && data.video) {
+                return data.video;
+              }
+              console.error('Invalid video data:', data);
+              return null;
+            })
+            .catch(error => {
+              console.error('Error fetching video:', error);
+              return null;
+            })
+        )
+      ).then(videosData => {
+        // Filter out any null values from failed requests
+        const validVideos = videosData.filter(video => video !== null);
+        setVideos(validVideos);
+      }).catch(error => {
+        console.error('Error fetching videos:', error);
+      });
+    } else {
+      setVideos([]);
+    }
+  }, [user?.metadata.videos]);
+
   return (
     <SafeAreaView style={styles.container}>
       {showSettings ? (
@@ -218,13 +250,13 @@ export default function Profile() {
 
           <View style={styles.videosSection}>
             <Text style={styles.sectionTitle}>Videos</Text>
-            {user?.metadata.videos.length === 0 ? (
+            {!videos.length ? (
               <Text style={styles.noContent}>No videos yet</Text>
             ) : (
               <View style={styles.videoGrid}>
-                {user?.metadata.videos.map((video, index) => (
+                {videos.map((video, index) => (
                   <View key={index} style={styles.videoItem}>
-                    <Image source={{ uri: video }} style={styles.videoThumbnail} />
+                    <Image source={{ uri: video.contentUrl }} style={styles.videoThumbnail} />
                   </View>
                 ))}
               </View>
@@ -358,6 +390,12 @@ const styles = StyleSheet.create({
     width: "100%",
     aspectRatio: 1,
     borderRadius: 8,
+  },
+  videoTitle: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+    textAlign: 'center',
   },
   settingsSection: {
     backgroundColor: "#fff",
