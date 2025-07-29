@@ -1,5 +1,6 @@
 "use client"
 
+import { VideoOverlay } from '@/components/ui/VideoOverlay';
 import { getUser, getVideos, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
 import { ResizeMode, Video } from 'expo-av';
@@ -17,6 +18,8 @@ export default function Profile() {
   const { user, setUser } = useUser();
   const [image, setImage] = useState<string | undefined>(user?.metadata.profile.avatar);
   const [videos, setVideos] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
   
   useEffect(() => {
     getVideos(user?._id).then((videos) => {
@@ -227,8 +230,8 @@ export default function Profile() {
                     key={video._id || index}
                     style={styles.videoItem}
                     onPress={() => {
-                      // Handle video press
-                      console.log('Video pressed:', video);
+                      setSelectedVideo(video);
+                      setIsVideoOverlayVisible(true);
                     }}
                   >
                     <Video
@@ -250,6 +253,24 @@ export default function Profile() {
             </View>
           </View>
         </ScrollView>
+      )}
+
+      {selectedVideo && (
+        <VideoOverlay
+          isVisible={isVideoOverlayVisible}
+          onClose={() => {
+            setIsVideoOverlayVisible(false);
+            setSelectedVideo(null);
+          }}
+          video={{
+            videoId: selectedVideo._id,
+            contentUrl: selectedVideo.contentUrl,
+            title: selectedVideo.title || '',
+            description: selectedVideo.description || '',
+            mptIssuanceId: selectedVideo.mptIssuanceId || ''
+          }}
+          xrplSeed={user?.metadata?.wallet?.seed}
+        />
       )}
     </SafeAreaView>
   );
