@@ -62,3 +62,20 @@ export const createVideo = async ({ videoUri, title, description }) => {
     throw error;
   }
 }; 
+
+export const addComment = async ({ videoId, comment }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ comment }),
+    });
+    const data = await response.json();
+    return data.comment;
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+};

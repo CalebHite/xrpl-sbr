@@ -1,8 +1,9 @@
+import { CommentSection } from '@/components/ui/CommentSection';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
 
@@ -17,24 +18,60 @@ interface VideoOverlayProps {
     title: string;
     description?: string;
     mptIssuanceId: string;
+    comments: Comment[];
   };
   xrplSeed?: string;
+  onCommentAdded?: (videoId: string, newComment: Comment) => void;
 }
 
-export function VideoOverlay({ isVisible, onClose, video, xrplSeed }: VideoOverlayProps) {
+interface Comment {
+  _id: string;
+  userId: {
+    _id: string;
+    username: string;
+    metadata: {
+      profile: {
+        avatar: string;
+      }
+    }
+  };
+  text: string;
+  createdAt: Date;
+}
+
+export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdded }: VideoOverlayProps) {
   const [isTradeOverlayVisible, setIsTradeOverlayVisible] = useState(false);
+  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
   const videoRef = useRef<Video | null>(null);
+  const commentSectionAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
       videoRef.current?.setIsMutedAsync(false);
     } else {
       videoRef.current?.setIsMutedAsync(true);
+      setIsCommentSectionVisible(false);
     }
   }, [isVisible]);
 
+  useEffect(() => {
+    Animated.timing(commentSectionAnim, {
+      toValue: isCommentSectionVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isCommentSectionVisible]);
+
   const handleTradePress = () => {
     setIsTradeOverlayVisible(true);
+  };
+
+  const handleCommentPress = () => {
+    setIsCommentSectionVisible(!isCommentSectionVisible);
+  };
+
+  const handleCommentAdded = (newComment: Comment) => {
+    onCommentAdded?.(video.videoId, newComment);
   };
 
   return (
@@ -85,6 +122,23 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed }: VideoOverl
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.iconButton}
+              onPress={handleCommentPress}
+            >
+              <IconSymbol 
+                name="message.fill"
+                size={28}
+                color="#fff"
+              />
+              {video.comments?.length > 0 && (
+                <View style={styles.commentBadge}>
+                  <ThemedText style={styles.commentCount}>
+                    {video.comments.length}
+                  </ThemedText>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
               onPress={onClose}
             >
               <IconSymbol 
@@ -104,6 +158,27 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed }: VideoOverl
               </ThemedText>
             )}
           </View>
+          
+          <Animated.View 
+            style={[
+              styles.commentSectionContainer,
+              {
+                transform: [{
+                  translateY: commentSectionAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [300, 0]
+                  })
+                }]
+              }
+            ]}
+            pointerEvents={isCommentSectionVisible ? 'auto' : 'none'}
+          >
+            <CommentSection
+              videoId={video.videoId}
+              comments={video.comments || []}
+              onCommentAdded={handleCommentAdded}
+            />
+          </Animated.View>
           
           <TradeOverlay
             isVisible={isTradeOverlayVisible}
@@ -178,5 +253,32 @@ const styles = StyleSheet.create({
   },
   videoTouchable: {
     flex: 1,
+  },
+  commentSectionContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 300,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+  },
+  commentBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  commentCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   }
 }); 

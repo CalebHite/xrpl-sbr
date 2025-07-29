@@ -2,20 +2,37 @@ import { useUser } from '@/app/context/UserContext';
 import { User } from '@/app/login';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { CommentSection } from '@/components/ui/CommentSection';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { UserProfileOverlay } from '@/components/ui/UserProfileOverlay';
+import { VideoOverlay } from '@/components/ui/VideoOverlay';
 import { followUser, getUser, unfollowUser } from '@/scripts/account';
 import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
-import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
 import { fetchVideos } from '../../scripts/videos';
 
 const { height } = Dimensions.get('window');
 
 interface Creator extends User {
   _id: string;
+}
+
+interface Comment {
+  _id: string;
+  userId: {
+    _id: string;
+    username: string;
+    metadata: {
+      profile: {
+        avatar: string;
+      }
+    }
+  };
+  text: string;
+  createdAt: Date;
 }
 
 interface VideoItem {
@@ -25,6 +42,7 @@ interface VideoItem {
   description?: string;
   mptIssuanceId: string;
   creator: Creator;
+  comments: Comment[];
 }
 
 export default function ExploreScreen() {
@@ -34,8 +52,11 @@ export default function ExploreScreen() {
   const [focusedVideoId, setFocusedVideoId] = useState<string | null>(null);
   const [isTradeOverlayVisible, setIsTradeOverlayVisible] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
+  const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
+  const [isCommentSectionVisible, setIsCommentSectionVisible] = useState<string | null>(null);
+  const commentSectionAnim = useRef(new Animated.Value(0)).current;
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const { user, setUser } = useUser();
 
@@ -123,6 +144,33 @@ export default function ExploreScreen() {
     }
   };
 
+  const handleVideoPress = (video: VideoItem) => {
+    setSelectedVideo(video);
+    setIsVideoOverlayVisible(true);
+  };
+
+  const handleCommentPress = (videoId: string) => {
+    setIsCommentSectionVisible(prevId => prevId === videoId ? null : videoId);
+  };
+
+  useEffect(() => {
+    Animated.timing(commentSectionAnim, {
+      toValue: isCommentSectionVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isCommentSectionVisible]);
+
+  const handleCommentAdded = (videoId: string, newComment: Comment) => {
+    setVideos(prevVideos => 
+      prevVideos.map(video => 
+        video.videoId === videoId 
+          ? { ...video, comments: [...video.comments, newComment] }
+          : video
+      )
+    );
+  };
+
   const loadVideos = async () => {
     try {
       setLoading(true);
@@ -155,11 +203,12 @@ export default function ExploreScreen() {
             }
           }
         }}
+        onLongPress={() => handleVideoPress(item)}
+        delayLongPress={200}
       >
         <Video
           ref={(ref) => {
             videoRefs.current[item.videoId] = ref;
-            // Set initial mute state
             if (ref) {
               ref.setIsMutedAsync(item.videoId !== focusedVideoId);
             }
@@ -186,6 +235,23 @@ export default function ExploreScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.iconButton}
+          onPress={() => handleCommentPress(item.videoId)}
+        >
+          <IconSymbol 
+            name="message.fill"
+            size={28}
+            color="#fff"
+          />
+          {item.comments?.length > 0 && (
+            <View style={styles.commentBadge}>
+              <ThemedText style={styles.commentCount}>
+                {item.comments.length}
+              </ThemedText>
+            </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.iconButton}
           onPress={() => handleProfilePress(item)}
         >
           <IconSymbol 
@@ -205,6 +271,28 @@ export default function ExploreScreen() {
           </ThemedText>
         )}
       </View>
+
+      <Animated.View 
+        style={[
+          styles.commentSectionContainer,
+          {
+            transform: [{
+              translateY: commentSectionAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [300, 0]
+              })
+            }],
+            opacity: isCommentSectionVisible === item.videoId ? 1 : 0,
+            pointerEvents: isCommentSectionVisible === item.videoId ? 'auto' : 'none',
+          }
+        ]}
+      >
+        <CommentSection
+          videoId={item.videoId}
+          comments={item.comments || []}
+          onCommentAdded={(newComment) => handleCommentAdded(item.videoId, newComment)}
+        />
+      </Animated.View>
       
       {selectedVideo && (
         <TradeOverlay
@@ -253,12 +341,24 @@ export default function ExploreScreen() {
         removeClippedSubviews={false}
       />
       
+      {selectedVideo && (
+        <VideoOverlay
+          isVisible={isVideoOverlayVisible}
+          onClose={() => {
+            setIsVideoOverlayVisible(false);
+            setSelectedVideo(null);
+          }}
+          video={selectedVideo}
+          xrplSeed={user?.metadata?.wallet?.seed}
+          onCommentAdded={handleCommentAdded}
+        />
+      )}
+
       {selectedCreator && (
         <UserProfileOverlay
           isVisible={isProfileVisible}
           onClose={() => {
             setIsProfileVisible(false);
-            // Clear the selected creator after a short delay to allow the modal animation to complete
             setTimeout(() => setSelectedCreator(null), 300);
           }}
           user={selectedCreator}
@@ -266,10 +366,8 @@ export default function ExploreScreen() {
           onFollow={async () => {
             if (selectedCreator._id) {
               await followUser(selectedCreator._id);
-              // Get the updated current user data
               const updatedUser = await getUser();
               setUser(updatedUser.metadata);
-              // Refresh the selected creator's data
               const updatedCreator = await getUser(selectedCreator._id);
               setSelectedCreator(prevCreator => ({
                 ...prevCreator!,
@@ -280,10 +378,8 @@ export default function ExploreScreen() {
           onUnfollow={async () => {
             if (selectedCreator._id) {
               await unfollowUser(selectedCreator._id);
-              // Get the updated current user data
               const updatedUser = await getUser();
               setUser(updatedUser.metadata);
-              // Refresh the selected creator's data
               const updatedCreator = await getUser(selectedCreator._id);
               setSelectedCreator(prevCreator => ({
                 ...prevCreator!,
@@ -388,5 +484,31 @@ const styles = StyleSheet.create({
   },
   videoTouchable: {
     flex: 1,
+  },
+  commentBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#007AFF',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  commentCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  commentSectionContainer: {
+    position: 'absolute',
+    bottom: 75,
+    left: 0,
+    right: 0,
+    height: 300,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   }
 }); 
