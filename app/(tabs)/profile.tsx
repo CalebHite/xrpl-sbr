@@ -7,7 +7,7 @@ import { ResizeMode, Video } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
@@ -20,6 +20,7 @@ export default function Profile() {
   const [videos, setVideos] = useState<any[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
+  const videoRefs = useRef<{ [key: string]: Video | null }>({});
   
   useEffect(() => {
     getVideos(user?._id).then((videos) => {

@@ -80,6 +80,12 @@ export default function ExploreScreen() {
 
   const handleProfilePress = async (video: VideoItem) => {
     try {
+      // Pause the current video
+      const videoRef = videoRefs.current[video.videoId];
+      if (videoRef) {
+        await videoRef.pauseAsync();
+      }
+
       // Get the creator's full user data
       const userData = await getUser(video.creator._id);
       
@@ -134,22 +140,39 @@ export default function ExploreScreen() {
 
   const renderVideo = ({ item }: { item: VideoItem }) => (
     <View style={styles.videoContainer}>
-      <Video
-        ref={(ref) => {
-          videoRefs.current[item.videoId] = ref;
-          // Set initial mute state
-          if (ref) {
-            ref.setIsMutedAsync(item.videoId !== focusedVideoId);
+      <TouchableOpacity 
+        style={styles.videoTouchable}
+        onPress={async () => {
+          const videoRef = videoRefs.current[item.videoId];
+          if (videoRef) {
+            const status = await videoRef.getStatusAsync();
+            if (status.isLoaded) {
+              if (status.isPlaying) {
+                await videoRef.pauseAsync();
+              } else {
+                await videoRef.playAsync();
+              }
+            }
           }
         }}
-        source={{ uri: item.contentUrl }}
-        style={styles.video}
-        useNativeControls={false}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay={true}
-        isLooping
-        isMuted={item.videoId !== focusedVideoId}
-      />
+      >
+        <Video
+          ref={(ref) => {
+            videoRefs.current[item.videoId] = ref;
+            // Set initial mute state
+            if (ref) {
+              ref.setIsMutedAsync(item.videoId !== focusedVideoId);
+            }
+          }}
+          source={{ uri: item.contentUrl }}
+          style={styles.video}
+          useNativeControls={false}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={true}
+          isLooping
+          isMuted={item.videoId !== focusedVideoId}
+        />
+      </TouchableOpacity>
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.iconButton}
@@ -362,5 +385,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  videoTouchable: {
+    flex: 1,
   }
 }); 

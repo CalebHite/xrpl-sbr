@@ -46,16 +46,32 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed }: VideoOverl
     >
       <ThemedView style={styles.container}>
         <View style={styles.videoContainer}>
-          <Video
-            ref={videoRef}
-            source={{ uri: video.contentUrl }}
-            style={styles.video}
-            useNativeControls={false}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={true}
-            isLooping
-            isMuted={false}
-          />
+          <TouchableOpacity 
+            style={styles.videoTouchable}
+            onPress={async () => {
+              if (videoRef.current) {
+                const status = await videoRef.current.getStatusAsync();
+                if (status.isLoaded) {
+                  if (status.isPlaying) {
+                    await videoRef.current.pauseAsync();
+                  } else {
+                    await videoRef.current.playAsync();
+                  }
+                }
+              }
+            }}
+          >
+            <Video
+              ref={videoRef}
+              source={{ uri: video.contentUrl }}
+              style={styles.video}
+              useNativeControls={false}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay={true}
+              isLooping
+              isMuted={false}
+            />
+          </TouchableOpacity>
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={styles.iconButton}
@@ -159,5 +175,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  videoTouchable: {
+    flex: 1,
   }
 }); 

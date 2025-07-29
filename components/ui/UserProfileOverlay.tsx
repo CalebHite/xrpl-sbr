@@ -1,16 +1,18 @@
 import { getVideos } from '@/scripts/account';
 import { ResizeMode, Video } from 'expo-av';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
 import { Button } from './Button';
 import { Card } from './Card';
+import { VideoOverlay } from './VideoOverlay';
 
 interface UserProfileOverlayProps {
   isVisible: boolean;
   onClose: () => void;
   user: {
+    _id: string;
     username: string;
     metadata: {
       profile: {
@@ -22,6 +24,9 @@ interface UserProfileOverlayProps {
         trades: number;
       };
       videos: string[];
+      wallet?: {
+        seed: string;
+      };
     };
   };
   currentUserId: string;
@@ -39,6 +44,32 @@ export function UserProfileOverlay({
 }: UserProfileOverlayProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
+  const videoRefs = useRef<{ [key: string]: Video | null }>({});
+
+  // Stop all videos when the overlay becomes visible
+  useEffect(() => {
+    if (isVisible) {
+      const pauseVideos = async () => {
+        try {
+          const refs = Object.values(videoRefs.current);
+          for (const ref of refs) {
+            if (ref) {
+              const status = await ref.getStatusAsync();
+              if (status.isLoaded && status.isPlaying) {
+                await ref.pauseAsync();
+              }
+              await ref.setIsMutedAsync(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error pausing videos:', error);
+        }
+      };
+      pauseVideos();
+    }
+  }, [isVisible]);
 
   const profile = user?.metadata?.profile || {
     avatar: '',
@@ -155,8 +186,8 @@ export function UserProfileOverlay({
                     key={video._id || index}
                     style={styles.videoItem}
                     onPress={() => {
-                      // Handle video press
-                      console.log('Video pressed:', video);
+                      setSelectedVideo(video);
+                      setIsVideoOverlayVisible(true);
                     }}
                   >
                     <Video
@@ -180,6 +211,24 @@ export function UserProfileOverlay({
           </ScrollView>
         </ThemedView>
       </View>
+
+      {selectedVideo && (
+        <VideoOverlay
+          isVisible={isVideoOverlayVisible}
+          onClose={() => {
+            setIsVideoOverlayVisible(false);
+            setSelectedVideo(null);
+          }}
+          video={{
+            videoId: selectedVideo._id,
+            contentUrl: selectedVideo.contentUrl,
+            title: selectedVideo.title || '',
+            description: selectedVideo.description || '',
+            mptIssuanceId: selectedVideo.mptIssuanceId || ''
+          }}
+          xrplSeed={user?.metadata?.wallet?.seed}
+        />
+      )}
     </Modal>
   );
 }
