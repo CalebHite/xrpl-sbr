@@ -1,7 +1,7 @@
 import { getVideos } from '@/scripts/account';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
 import { Button } from './Button';
@@ -47,6 +47,8 @@ export function UserProfileOverlay({
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
+  const [videos, setVideos] = useState<any[]>([]);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
 
   // Stop all videos when the overlay becomes visible
   useEffect(() => {
@@ -80,14 +82,19 @@ export function UserProfileOverlay({
     trades: 0
   };
 
-  const [videos, setVideos] = useState<any[]>([]);
   const isFollowing = profile.followers.includes(currentUserId);
 
   useEffect(() => {
-      getVideos(user?._id).then((videos) => {
-      setVideos(videos.videos);
-      console.log(videos);
-    });
+    if (user?._id) {
+      setIsLoadingVideos(true);
+      getVideos(user._id).then((videos) => {
+        setVideos(videos.videos);
+        setIsLoadingVideos(false);
+      }).catch(error => {
+        console.error('Error loading videos:', error);
+        setIsLoadingVideos(false);
+      });
+    }
   }, [user]);
 
   const handleFollowAction = async () => {
@@ -180,7 +187,11 @@ export function UserProfileOverlay({
             <View style={styles.videosSection}>
             <Text style={styles.sectionTitle}>Videos</Text>
             <View style={styles.videosGrid}>
-              {videos.length > 0 ? (
+              {isLoadingVideos ? (
+                <View style={styles.noVideosContainer}>
+                  <ActivityIndicator size="large" color="#666" />
+                </View>
+              ) : videos.length > 0 ? (
                 videos.map((video, index) => (
                   <TouchableOpacity 
                     key={video._id || index}

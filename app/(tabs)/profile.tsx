@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 
 export default function Profile() {
@@ -20,12 +20,17 @@ export default function Profile() {
   const [videos, setVideos] = useState<any[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [isVideoOverlayVisible, setIsVideoOverlayVisible] = useState(false);
+  const [isLoadingVideos, setIsLoadingVideos] = useState(true);
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   
   useEffect(() => {
     getVideos(user?._id).then((videos) => {
       setVideos(videos.videos);
+      setIsLoadingVideos(false);
       console.log(videos);
+    }).catch(error => {
+      console.error('Error loading videos:', error);
+      setIsLoadingVideos(false);
     });
   }, [user]);
 
@@ -225,7 +230,11 @@ export default function Profile() {
           <View style={styles.videosSection}>
             <Text style={styles.sectionTitle}>Videos</Text>
             <View style={styles.videosGrid}>
-              {videos.length > 0 ? (
+              {isLoadingVideos ? (
+                <View style={styles.noVideosContainer}>
+                  <ActivityIndicator size="large" color="#666" />
+                </View>
+              ) : videos.length > 0 ? (
                 videos.map((video, index) => (
                   <TouchableOpacity 
                     key={video._id || index}
