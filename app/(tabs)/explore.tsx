@@ -10,7 +10,7 @@ import { VideoOverlay } from '@/components/ui/VideoOverlay';
 import { followUser, getUser, unfollowUser } from '@/scripts/account';
 import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
 import { fetchVideos } from '../../scripts/videos';
 
@@ -150,24 +150,46 @@ export default function ExploreScreen() {
   };
 
   const handleCommentPress = (videoId: string) => {
-    setIsCommentSectionVisible(prevId => prevId === videoId ? null : videoId);
+    if (isCommentSectionVisible === videoId) {
+      // If the same section is visible, hide it
+      Animated.timing(commentSectionAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsCommentSectionVisible(null);
+      });
+    } else {
+      // If a different section should be shown, or none is currently shown
+      setIsCommentSectionVisible(videoId);
+      Animated.timing(commentSectionAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
-  useEffect(() => {
-    Animated.timing(commentSectionAnim, {
-      toValue: isCommentSectionVisible ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [isCommentSectionVisible]);
+  // Animation is now handled in handleCommentPress
 
   const handleCommentAdded = (videoId: string, newComment: Comment) => {
+    if (!videoId || !newComment) {
+      console.warn('Invalid comment data:', { videoId, newComment });
+      return;
+    }
+
     setVideos(prevVideos => 
-      prevVideos.map(video => 
-        video.videoId === videoId 
-          ? { ...video, comments: [...video.comments, newComment] }
-          : video
-      )
+      prevVideos.map(video => {
+        if (video.videoId === videoId) {
+          return {
+            ...video,
+            comments: Array.isArray(video.comments) 
+              ? [...video.comments, newComment]
+              : [newComment]
+          };
+        }
+        return video;
+      })
     );
   };
 
@@ -272,27 +294,32 @@ export default function ExploreScreen() {
         )}
       </View>
 
-      <Animated.View 
-        style={[
-          styles.commentSectionContainer,
-          {
-            transform: [{
-              translateY: commentSectionAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [300, 0]
-              })
-            }],
-            opacity: isCommentSectionVisible === item.videoId ? 1 : 0,
-            pointerEvents: isCommentSectionVisible === item.videoId ? 'auto' : 'none',
-          }
-        ]}
-      >
-        <CommentSection
-          videoId={item.videoId}
-          comments={item.comments || []}
-          onCommentAdded={(newComment) => handleCommentAdded(item.videoId, newComment)}
-        />
-      </Animated.View>
+      {isCommentSectionVisible === item.videoId && (
+        <Animated.View 
+          style={[
+            styles.commentSectionContainer,
+            {
+              transform: [{
+                translateY: commentSectionAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [300, 0]
+                })
+              }],
+              backgroundColor: '#fff'
+            }
+          ]}
+        >
+          <CommentSection
+            videoId={item.videoId}
+            comments={item.comments || []}
+            onCommentAdded={(newComment) => {
+              if (newComment) {
+                handleCommentAdded(item.videoId, newComment);
+              }
+            }}
+          />
+        </Animated.View>
+      )}
       
       {selectedVideo && (
         <TradeOverlay
@@ -350,7 +377,11 @@ export default function ExploreScreen() {
           }}
           video={selectedVideo}
           xrplSeed={user?.metadata?.wallet?.seed}
-          onCommentAdded={handleCommentAdded}
+          onCommentAdded={(newComment) => {
+            if (selectedVideo && newComment) {
+              handleCommentAdded(selectedVideo.videoId, newComment);
+            }
+          }}
         />
       )}
 
@@ -510,5 +541,14 @@ const styles = StyleSheet.create({
     height: 300,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   }
 }); 

@@ -71,7 +71,9 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
   };
 
   const handleCommentAdded = (newComment: Comment) => {
-    onCommentAdded?.(video.videoId, newComment);
+    if (newComment && video?.videoId) {
+      onCommentAdded?.(video.videoId, newComment);
+    }
   };
 
   return (
@@ -263,6 +265,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
+    backgroundColor: 'transparent',
   },
   commentBadge: {
     position: 'absolute',
