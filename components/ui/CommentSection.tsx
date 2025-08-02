@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   commentListContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    flexGrow: 1, // Allow content to grow
+    flexGrow: 1,
   },
   loadingContainer: {
     paddingVertical: 16,
@@ -313,6 +313,7 @@ const styles = StyleSheet.create({
   commentContainer: {
     flexDirection: 'row',
     paddingVertical: 12,
+    backgroundColor: '#101010',
   },
   avatar: {
     marginRight: 12,
@@ -355,6 +356,7 @@ const styles = StyleSheet.create({
   submitButton: {
     width: 32,
     height: 32,
+    color: '#2fa4ff',
     justifyContent: 'center',
     alignItems: 'center',
   },

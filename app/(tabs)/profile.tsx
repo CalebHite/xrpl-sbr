@@ -169,7 +169,6 @@ export default function Profile() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Profile</Text>
             <TouchableOpacity onPress={()=>{setShowSettings(!showSettings)}} style={styles.settingsButton}>
               <Ionicons name="settings-outline" size={24} color="#333" />
             </TouchableOpacity>
@@ -298,13 +297,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e1e5e9",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
+    fontFamily: "Montserrat-Bold",
   },
   settingsButton: {
     padding: 8,
@@ -316,9 +314,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   profilePictureContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: {
@@ -330,15 +328,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   profilePicture: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 160,
+    height: 160,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   username: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 8,
+    fontFamily: "Montserrat-Bold",
   },
   bioContainer: {
     width: "80%",
@@ -348,6 +348,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+    fontFamily: "Montserrat-Regular",
   },
   bioInput: {
     fontSize: 16,
@@ -357,6 +358,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
+    fontFamily: "Montserrat-Regular",
   },
   statsSection: {
     flexDirection: "row",
@@ -372,17 +374,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+    fontFamily: "Montserrat-Bold",
   },
   statLabel: {
     fontSize: 14,
     color: "#666",
     marginTop: 4,
+    fontFamily: "Montserrat-Regular",
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 16,
+    fontFamily: "Montserrat-Bold",
   },
 
   settingsSection: {
@@ -399,10 +404,12 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     color: "#333",
+    fontFamily: "Montserrat-Regular",
   },
   settingValue: {
     fontSize: 16,
     color: "#666",
+    fontFamily: "Montserrat-Regular",
   },
   changeAvatarButton: {
     position: "absolute",
@@ -434,10 +441,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: "Montserrat-Bold",
   },
   videosSection: {
     backgroundColor: '#fff',
     padding: 16,
+    marginHorizontal: 16,
   },
   videosGrid: {
     flexDirection: 'row',
@@ -462,8 +471,7 @@ const styles = StyleSheet.create({
   videoThumbnail: {
     width: '100%',
     height: 120,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderRadius: 10,
   },
   videoInfo: {
     padding: 8,
@@ -473,10 +481,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
     marginBottom: 4,
+    fontFamily: "Montserrat-Regular",
   },
   videoViews: {
     fontSize: 12,
     color: '#666',
+    fontFamily: "Montserrat-Regular",
   },
   noVideosContainer: {
     width: '100%',
@@ -488,6 +498,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+    fontFamily: "Montserrat-Regular",
   },
 });
 

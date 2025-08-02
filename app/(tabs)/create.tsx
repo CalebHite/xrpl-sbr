@@ -85,7 +85,7 @@ export default function CreateScreen() {
     <ThemedView style={styles.container}>
       {!videoUri ? (
         <TouchableOpacity style={styles.pickButton} onPress={pickVideo}>
-          <Ionicons name="cloud-upload" size={50} color="#007AFF" />
+          <Ionicons name="cloud-upload" size={50} color="#ffffff" />
           <ThemedText style={styles.pickText}>Select a video to upload</ThemedText>
         </TouchableOpacity>
       ) : (
@@ -109,7 +109,7 @@ export default function CreateScreen() {
             onChangeText={setDescription}
             multiline
             numberOfLines={3}
-            style={styles.input}
+            style={styles.inputLarge}
           />
           {error && <ThemedText style={styles.error}>{error}</ThemedText>}
           <View style={styles.buttonContainer}>
@@ -125,7 +125,7 @@ export default function CreateScreen() {
             </Button>
             <Button 
               onPress={handleUpload}
-              style={styles.button}
+              style={styles.buttonUpload}
             >
               Upload
             </Button>
@@ -142,13 +142,20 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#101010',
+  },
+  title: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    fontFamily: 'Montserrat-Bold',
   },
   pickButton: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    borderWidth: 2,
-    borderColor: '#007AFF',
+    borderWidth: 3,
+    borderColor: '#2fa4ff',
     borderStyle: 'dashed',
     borderRadius: 20,
     width: '100%',
@@ -160,6 +167,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
+    backgroundColor: '#101010',
   },
   videoPreview: {
     width: '100%',
@@ -167,8 +175,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 20,
   },
+  inputLarge: {
+    marginBottom: 15,
+    paddingBottom: 100,
+    color: '#ffffff',
+    fontFamily: 'Montserrat-Regular',
+    borderRadius: 10,
+  },
   input: {
     marginBottom: 15,
+    color: '#ffffff',
+    fontFamily: 'Montserrat-Regular',
+    borderRadius: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -176,7 +194,19 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   button: {
-    flex: 1,
+    color: '#ffffff',
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    borderRadius: 10,
+    flex: 1
+  },
+  buttonUpload: {
+    backgroundColor: '#2fa4ff',
+    color: '#ffffff',
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    borderRadius: 10,
+    flex: 1
   },
   uploadingText: {
     marginTop: 10,

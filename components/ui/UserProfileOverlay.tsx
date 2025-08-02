@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 15,
     elevation: 5,
+    backgroundColor: '#101010',
   },
   closeButton: {
     position: 'absolute',
@@ -267,6 +268,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#e8eff4',
   },
   profileSection: {
     alignItems: 'center',
@@ -274,16 +276,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   profilePicture: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 150,
+    height: 150,
+    borderRadius: 15,
   },
   username: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Montserrat-Bold',
   },
   followButton: {
     minWidth: 120,
+    backgroundColor: '#2fa4ff',
+    color: '#e8eff4',
+    fontFamily: 'Montserrat-Bold',
+    fontSize: 16,
+    borderRadius: 10,
+    padding: 10,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   followingButton: {
     backgroundColor: '#666',
@@ -291,10 +302,16 @@ const styles = StyleSheet.create({
   bioCard: {
     width: '100%',
     padding: 12,
+    backgroundColor: '#e8eff4',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
   },
   bio: {
     textAlign: 'center',
     fontSize: 14,
+    color: '#000000',
+    fontFamily: 'Montserrat-Regular',
   },
   statsSection: {
     flexDirection: 'row',
@@ -372,7 +389,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#e8eff4",
     marginBottom: 16,
   },
 }); 
