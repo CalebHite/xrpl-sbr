@@ -66,9 +66,35 @@ export const createVideo = async ({ videoUri, title, description }) => {
   }
 }; 
 
+export const getComments = async ({ videoId }) => {
+  try {
+    const videoResponse = await fetch(`${API_BASE_URL}/api/videos/${videoId}`, {
+      credentials: 'include'
+    });
+    const videoData = await videoResponse.json();
+    
+    if (!videoData.success || !videoData.video) {
+      console.error('Failed to fetch video details:', videoData);
+      throw new Error('Video not found');
+    }
+
+    const mongoId = videoData.video._id;
+    console.log('Found video:', { videoId, mongoId, video: videoData.video });
+
+    // Now fetch the comments using the MongoDB ID
+    const response = await fetch(`${API_BASE_URL}/api/videos/${mongoId}/comments`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    return data.comments;
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    throw error;
+  }
+}
+
 export const addComment = async ({ videoId, comment }) => {
   try {
-    // First, fetch the video details to get its MongoDB ID
     const videoResponse = await fetch(`${API_BASE_URL}/api/videos/${videoId}`, {
       credentials: 'include'
     });

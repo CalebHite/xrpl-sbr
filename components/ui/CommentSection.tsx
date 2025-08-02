@@ -1,6 +1,7 @@
-import { addComment } from '@/scripts/videos';
+import { addComment, getComments } from '@/scripts/videos';
 import React, { useCallback, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   FlatList,
   Keyboard,
@@ -39,18 +40,43 @@ interface CommentSectionProps {
   style?: ViewStyle;
 }
 
-export function CommentSection({ videoId, comments, onCommentAdded, style }: CommentSectionProps) {
+export function CommentSection({ videoId, onCommentAdded, style }: CommentSectionProps) {
   const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreComments, setHasMoreComments] = useState(true);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<any>(null);
   const backgroundColor = '#1a1a1a';
-  const textColor = '#ffffff';
   const borderColor = 'rgba(255, 255, 255, 0.1)';
 
   // Keyboard animation
   const keyboardAnim = useRef(new Animated.Value(0)).current;
+
+  const fetchComments = useCallback(async (refresh = false) => {
+    try {
+      const newComments = await getComments({ videoId });
+      console.log('comments', newComments);
+      
+      if (refresh) {
+        setComments(newComments);
+      } else {
+        setComments(prev => [...prev, ...newComments]);
+      }
+      
+      setHasMoreComments(newComments.length > 0);
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [videoId]);
+
+  React.useEffect(() => {
+    fetchComments(true);
+  }, [fetchComments]);
 
   React.useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -81,7 +107,7 @@ export function CommentSection({ videoId, comments, onCommentAdded, style }: Com
       keyboardWillShow.remove();
       keyboardWillHide.remove();
     };
-  }, []);
+  }, [keyboardAnim]);
 
   const formatTimeAgo = useCallback((date: Date) => {
     const now = new Date();
@@ -108,7 +134,6 @@ export function CommentSection({ videoId, comments, onCommentAdded, style }: Com
 
       setNewComment('');
       
-      // Ensure the comment has the required structure before calling onCommentAdded
       const formattedComment: Comment = {
         _id: comment._id || String(Date.now()),
         userId: comment.userId || {
@@ -165,6 +190,7 @@ export function CommentSection({ videoId, comments, onCommentAdded, style }: Com
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, style]}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedText style={styles.headerTitle}>Comments</ThemedText>
@@ -177,10 +203,30 @@ export function CommentSection({ videoId, comments, onCommentAdded, style }: Com
         renderItem={renderComment}
         keyExtractor={(item) => item?._id || Math.random().toString()}
         style={[styles.commentList, { backgroundColor }]}
-        contentContainerStyle={styles.commentListContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.commentListContent,
+          comments.length === 0 && { flex: 1 }
+        ]}
+        showsVerticalScrollIndicator={true}
+        indicatorStyle="white"
         keyboardShouldPersistTaps="handled"
-        inverted
+        scrollEnabled={true}
+        alwaysBounceVertical={true}
+        overScrollMode="always"
+        onEndReached={() => {
+          if (!isLoadingMore && hasMoreComments) {
+            setIsLoadingMore(true);
+            fetchComments();
+          }
+        }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() => (
+          isLoadingMore ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#007AFF" />
+            </View>
+          ) : null
+        )}
       />
 
       <Animated.View 
@@ -233,7 +279,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: 'hidden',
+    minHeight: 200,
   },
   header: {
     flexDirection: 'row',
@@ -253,9 +299,16 @@ const styles = StyleSheet.create({
   },
   commentList: {
     flex: 1,
+    width: '100%',
   },
   commentListContent: {
     paddingHorizontal: 16,
+    paddingBottom: 16,
+    flexGrow: 1, // Allow content to grow
+  },
+  loadingContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   commentContainer: {
     flexDirection: 'row',
