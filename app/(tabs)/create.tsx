@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -84,9 +85,17 @@ export default function CreateScreen() {
   return (
     <ThemedView style={styles.container}>
       {!videoUri ? (
-        <TouchableOpacity style={styles.pickButton} onPress={pickVideo}>
-          <Ionicons name="cloud-upload" size={50} color="#ffffff" />
-          <ThemedText style={styles.pickText}>Select a video to upload</ThemedText>
+        <TouchableOpacity onPress={pickVideo}>
+          <LinearGradient
+            colors={['rgba(140, 82, 255, 1)', 'rgba(166, 220, 255, 1)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientBorder}>
+            <View style={styles.pickButton}>
+              <Ionicons name="cloud-upload" size={50} color="#ffffff" />
+              <ThemedText style={styles.pickText}>Select a video to upload</ThemedText>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
       ) : (
         <View style={styles.formContainer}>
@@ -107,7 +116,6 @@ export default function CreateScreen() {
             placeholder="Description (optional)"
             value={description}
             onChangeText={setDescription}
-            multiline
             numberOfLines={3}
             style={styles.inputLarge}
           />
@@ -150,20 +158,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: 'Montserrat-Bold',
   },
+  gradientBorder: {
+    borderRadius: 20,
+    padding: 3,
+    width: '100%',
+    aspectRatio: 16/9,
+  },
   pickButton: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    borderWidth: 3,
-    borderColor: '#2fa4ff',
-    borderStyle: 'dashed',
-    borderRadius: 20,
+    borderRadius: 17,
+    backgroundColor: '#101010',
     width: '100%',
-    aspectRatio: 16/9,
+    height: '100%',
   },
   pickText: {
     marginTop: 10,
     fontSize: 16,
+    fontFamily: 'Montserrat-Bold',
   },
   formContainer: {
     width: '100%',
@@ -177,16 +190,20 @@ const styles = StyleSheet.create({
   },
   inputLarge: {
     marginBottom: 15,
-    paddingBottom: 100,
+    paddingBottom: 60,
     color: '#ffffff',
     fontFamily: 'Montserrat-Regular',
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffffff',
   },
   input: {
     marginBottom: 15,
     color: '#ffffff',
-    fontFamily: 'Montserrat-Regular',
+    fontFamily: 'Montserrat-Bold',
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffffff',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -201,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   buttonUpload: {
-    backgroundColor: '#2fa4ff',
+    backgroundColor: '#8C52FF',
     color: '#ffffff',
     fontFamily: 'Montserrat-Bold',
     fontSize: 16,

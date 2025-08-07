@@ -34,6 +34,7 @@ export default function Trade() {
   const [orders, setOrders] = React.useState<OrdersResponse | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [orderType, setOrderType] = React.useState<'buy' | 'sell'>('buy');
 
   const loadOrders = React.useCallback(async () => {
     try {
@@ -112,28 +113,30 @@ export default function Trade() {
     
     return (
       <Card key={order._id} style={styles.orderCard}>
-        <View style={styles.orderContent}>
-          <ThemedText style={styles.orderAmount}>Amount: {order.amount} XRP</ThemedText>
-          <ThemedText style={styles.orderDetail}>Token: {order.tokenId.split(':')[1]}</ThemedText>
-          <ThemedText style={styles.orderDetail}>
-            Created: {new Date(order.createdAt).toLocaleString()}
-          </ThemedText>
+        <View style={styles.orderRow}>
+          <View style={styles.orderContent}>
+            <ThemedText style={styles.orderAmount}>Amount: {order.amount} XRP</ThemedText>
+            <ThemedText style={styles.orderDetail}>Token: {order.tokenId.split(':')[1]}</ThemedText>
+            <ThemedText style={styles.orderDetail}>
+              Created: {new Date(order.createdAt).toLocaleString()}
+            </ThemedText>
+          </View>
+          <TouchableOpacity 
+            onPress={() => handleFulfillOrder(order, isBuyOrder)}
+            disabled={isLoading}>
+            <LinearGradient
+              colors={['rgba(140, 82, 255, 1)', 'rgba(166, 220, 255, 1)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.fulfillButton, isLoading && styles.disabledButton]}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <MaterialIcons name="swap-horiz" size={24} color="#ffffff" />
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          onPress={() => handleFulfillOrder(order, isBuyOrder)}
-          disabled={isLoading}>
-          <LinearGradient
-            colors={['rgba(140, 82, 255, 1)', 'rgba(166, 220, 255, 1)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.fulfillButton, isLoading && styles.disabledButton]}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <MaterialIcons name="swap-horiz" size={32} color="#ffffff" />
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
       </Card>
     );
   };
@@ -156,50 +159,103 @@ export default function Trade() {
 
   return (
     <ThemedView style={styles.container}>
-      <Image source={require('@/assets/images/virl_logo_dark.png')} style={styles.logo} />
-      <ScrollArea>
-        <View style={styles.section}>
-          <ThemedText style={styles.title}>Buy Orders</ThemedText>
-          {orders?.orders.buy.some(order => order.status === 'pending') ? (
-            orders.orders.buy.map(order => renderOrder(order, true))
-          ) : (
-            <ThemedText style={styles.placeholder}>No active buy orders</ThemedText>
-          )}
+      <View style={styles.header}>
+        <Image source={require('@/assets/images/virl_logo_dark.png')} style={styles.logo} />
+      </View>
+      
+      <View style={styles.content}>
+        <View style={styles.filterWrapper}>
+          <TouchableOpacity 
+            style={[styles.filterButton, orderType === 'buy' && styles.filterButtonActive]}
+            onPress={() => setOrderType('buy')}>
+            <ThemedText style={[styles.filterText, orderType === 'buy' && styles.filterTextActive]}>
+              Buy Orders
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterButton, orderType === 'sell' && styles.filterButtonActive]}
+            onPress={() => setOrderType('sell')}>
+            <ThemedText style={[styles.filterText, orderType === 'sell' && styles.filterTextActive]}>
+              Sell Orders
+            </ThemedText>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <ThemedText style={styles.title}>Sell Orders</ThemedText>
-          {orders?.orders.sell.some(order => order.status === 'pending') ? (
-            orders.orders.sell.map(order => renderOrder(order, false))
-          ) : (
-            <ThemedText style={styles.placeholder}>No active sell orders</ThemedText>
-          )}
-        </View>
-      </ScrollArea>
+        <ScrollArea style={styles.scrollArea}>
+          <View style={styles.section}>
+            {orders?.orders[orderType].some(order => order.status === 'pending') ? (
+              orders.orders[orderType].map(order => renderOrder(order, orderType === 'buy'))
+            ) : (
+              <ThemedText style={styles.placeholder}>No active {orderType} orders</ThemedText>
+            )}
+          </View>
+        </ScrollArea>
+      </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  filterWrapper: {
+    flexDirection: 'row',
+    marginBottom: 32,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+  },
+  filterButtonActive: {
+    backgroundColor: '#8C52FF',
+  },
+  filterText: {
+    fontSize: 16,
+    fontFamily: 'Montserrat-Medium',
+    color: '#ffffff',
+    opacity: 0.7,
+  },
+  filterTextActive: {
+    opacity: 1,
+  },
+  scrollArea: {
+    flex: 1,
+  },
   logo: {
     width: 75,
     height: 75,
-    marginVertical: 32,
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   orderContent: {
     flex: 1,
-    marginBottom: 12,
+    marginRight: 16,
   },
   fulfillButton: {
-    marginTop: 8,
     overflow: 'hidden',
-    borderRadius: 25,
+    borderRadius: 20,
     padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 48,
-    height: 48,
-    alignSelf: 'flex-end',
+    width: 40,
+    height: 40,
   },
   disabledButton: {
     opacity: 0.5,

@@ -464,7 +464,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 10
   },
   videoDescription: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: "900",
+    fontFamily: "Montserrat-Variable",
     color: '#fff',
     marginBottom: 15,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
