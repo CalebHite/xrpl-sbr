@@ -324,10 +324,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: "Montserrat-Bold",
   },
   statLabel: {
     fontSize: 12,
     color: '#666',
+    fontFamily: "Montserrat-Bold",
   },
   error: {
     color: 'red',

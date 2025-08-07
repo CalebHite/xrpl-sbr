@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   commentContainer: {
     flexDirection: 'row',
     paddingVertical: 12,
-    backgroundColor: '#101010',
+    backgroundColor: '#1a1a1a',
   },
   avatar: {
     marginRight: 12,

@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 30,
+    fontFamily: "Montserrat-Bold",
   },
   inputContainer: {
     width: '100%',
@@ -209,11 +210,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     width: '100%',
+    fontFamily: "Montserrat-Bold",
   },
   highlight: {
     color: '#007AFF',
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 20,
+    fontFamily: "Montserrat-Bold",
   },
 }); 

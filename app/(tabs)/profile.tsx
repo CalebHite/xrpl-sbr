@@ -8,8 +8,10 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ImageBackground, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
+const bgLight = require('../../assets/images/bg-light.png');
+const virlLogoLightFull = require('../../assets/images/virl_logo_light_full.png');
 
 export default function Profile() {
   const [showSettings, setShowSettings] = useState(false);
@@ -136,7 +138,8 @@ export default function Profile() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ImageBackground source={bgLight} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
       {showSettings ? (
         <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -175,6 +178,7 @@ export default function Profile() {
           </View>
 
           <View style={styles.profileSection}>
+            <Image source={virlLogoLightFull} style={styles.virlLogo} />
             <View style={styles.profilePictureContainer}>
               <Image source={{ uri: image || user?.metadata.profile.avatar }} style={styles.profilePicture} />
               <TouchableOpacity style={styles.changeAvatarButton} onPress={pickImage}>
@@ -227,7 +231,6 @@ export default function Profile() {
           </View>
 
           <View style={styles.videosSection}>
-            <Text style={styles.sectionTitle}>Videos</Text>
             <View style={styles.videosGrid}>
               {isLoadingVideos ? (
                 <View style={styles.noVideosContainer}>
@@ -276,19 +279,23 @@ export default function Profile() {
             contentUrl: selectedVideo.contentUrl,
             title: selectedVideo.title || '',
             description: selectedVideo.description || '',
-            mptIssuanceId: selectedVideo.mptIssuanceId || ''
+            mptIssuanceId: selectedVideo.mptIssuanceId || '',
+            comments: selectedVideo.comments || []
           }}
           xrplSeed={user?.metadata?.wallet?.seed}
         />
       )}
     </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -296,7 +303,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#fff",
   },
   headerTitle: {
     fontSize: 24,
@@ -309,9 +315,13 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: "center",
-    paddingVertical: 32,
-    backgroundColor: "#fff",
     marginBottom: 16,
+  },
+  virlLogo: {
+    width: 260,
+    height: 100,  
+    marginVertical: 8,
+    resizeMode: 'contain',
   },
   profilePictureContainer: {
     width: 160,
@@ -337,18 +347,17 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: 4,
     fontFamily: "Montserrat-Bold",
   },
   bioContainer: {
     width: "80%",
-    padding: 16,
+    padding: 4,
   },
   bio: {
     fontSize: 16,
     color: "#666",
     textAlign: "center",
-    fontFamily: "Montserrat-Regular",
   },
   bioInput: {
     fontSize: 16,
@@ -358,27 +367,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
-    fontFamily: "Montserrat-Regular",
   },
   statsSection: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     padding: 20,
     marginBottom: 16,
     justifyContent: "space-around",
+    borderRadius: 16,
+    borderColor: '#101010',
+    borderWidth: 1,
+    marginHorizontal: 16,
   },
   statItem: {
     alignItems: "center",
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "bold",
     color: "#333",
     fontFamily: "Montserrat-Bold",
   },
   statLabel: {
     fontSize: 14,
-    color: "#666",
+    color: "#000000",
     marginTop: 4,
     fontFamily: "Montserrat-Regular",
   },
@@ -404,12 +414,12 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     color: "#333",
-    fontFamily: "Montserrat-Regular",
+    fontFamily: "Montserrat-Bold",
   },
   settingValue: {
     fontSize: 16,
     color: "#666",
-    fontFamily: "Montserrat-Regular",
+    fontFamily: "Montserrat-Bold",
   },
   changeAvatarButton: {
     position: "absolute",
@@ -444,9 +454,11 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat-Bold",
   },
   videosSection: {
-    backgroundColor: '#fff',
     padding: 16,
     marginHorizontal: 16,
+    borderRadius: 16,
+    borderColor: '#101010',
+    borderWidth: 1,
   },
   videosGrid: {
     flexDirection: 'row',
@@ -478,15 +490,15 @@ const styles = StyleSheet.create({
   },
   videoTitle: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '900',
     color: '#333',
     marginBottom: 4,
-    fontFamily: "Montserrat-Regular",
+    fontFamily: "Montserrat-Bold",
   },
   videoViews: {
     fontSize: 12,
     color: '#666',
-    fontFamily: "Montserrat-Regular",
+    fontFamily: "Montserrat-Bold",
   },
   noVideosContainer: {
     width: '100%',

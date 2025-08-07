@@ -1,5 +1,5 @@
-import { Tabs, router } from 'expo-router';
-import React, { useEffect } from 'react';
+import { Tabs } from 'expo-router';
+import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
@@ -12,12 +12,6 @@ import { useUser } from '../context/UserContext';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user } = useUser();
-
-  useEffect(() => {
-    if (!user) {
-      router.replace('/login');
-    }
-  }, [user]);
 
   if (!user) {
     return null;
@@ -49,6 +43,13 @@ export default function TabLayout() {
         options={{
           title: 'Create',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="trade"
+        options={{
+          title: 'Trade',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.right.arrow.left" color={color} />,
         }}
       />
       <Tabs.Screen

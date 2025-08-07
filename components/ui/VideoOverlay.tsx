@@ -225,6 +225,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: "Montserrat-Bold",
     color: '#fff',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: -1, height: 1 },
@@ -232,6 +233,7 @@ const styles = StyleSheet.create({
   },
   videoDescription: {
     fontSize: 14,
+    fontFamily: "Montserrat-Bold",
     color: '#fff',
     marginBottom: 15,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',

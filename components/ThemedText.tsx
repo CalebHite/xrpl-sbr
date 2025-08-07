@@ -37,24 +37,31 @@ const styles = StyleSheet.create({
   default: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: 'Montserrat-Variable',
+    fontWeight: '500',
   },
   defaultSemiBold: {
     fontSize: 16,
     lineHeight: 24,
+    fontFamily: 'Montserrat-Variable',
     fontWeight: '600',
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Variable',
+    fontWeight: '700',
     lineHeight: 32,
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: 'Montserrat-Variable',
+    fontWeight: '600',
   },
   link: {
     lineHeight: 30,
     fontSize: 16,
+    fontFamily: 'Montserrat-Variable',
+    fontWeight: '500',
     color: '#0a7ea4',
   },
 });
