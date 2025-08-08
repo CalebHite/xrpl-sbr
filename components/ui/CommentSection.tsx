@@ -1,11 +1,12 @@
 import { addComment, getComments } from '@/scripts/videos';
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
+  Easing,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
+  PanResponder,
   Platform,
   StyleSheet,
   TouchableOpacity,
@@ -13,7 +14,6 @@ import {
   ViewStyle
 } from 'react-native';
 import { ThemedText } from '../ThemedText';
-import { ThemedView } from '../ThemedView';
 import { Avatar, AvatarImage } from './Avatar';
 import { IconSymbol } from './IconSymbol';
 import { Input } from './Input';
@@ -38,11 +38,15 @@ interface CommentSectionProps {
   comments: Comment[];
   onCommentAdded?: (newComment: Comment) => void;
   style?: ViewStyle;
+  onClose?: () => void;
+  onDragChange?: (dy: number) => void;
+  onInteractionStart?: () => void;
+  onInteractionEnd?: () => void;
 }
 
-export function CommentSection({ videoId, onCommentAdded, style }: CommentSectionProps) {
+export function CommentSection({ videoId, onCommentAdded, style, onClose, onDragChange, onInteractionStart, onInteractionEnd, comments: initialComments }: CommentSectionProps) {
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<Comment[]>(initialComments || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreComments, setHasMoreComments] = useState(true);
@@ -54,6 +58,53 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
 
   // Keyboard animation
   const keyboardAnim = useRef(new Animated.Value(0)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  // Drag handle to hide comments
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_evt, gesture) => {
+        const isVertical = Math.abs(gesture.dy) > Math.abs(gesture.dx);
+        return isVertical && gesture.dy > 2;
+      },
+      onPanResponderGrant: () => {
+        onInteractionStart?.();
+      },
+      onPanResponderMove: (_evt, gesture) => {
+        // Only allow downward drag to translate the whole sheet
+        const dy = Math.max(0, gesture.dy);
+        dragY.setValue(dy);
+        onDragChange?.(dy);
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_evt, gesture) => {
+        if (gesture.dy > 80) {
+          Keyboard.dismiss();
+          onClose?.();
+        }
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+          bounciness: 0
+        }).start();
+        onDragChange?.(0);
+        onInteractionEnd?.();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+          bounciness: 0
+        }).start();
+        onDragChange?.(0);
+        onInteractionEnd?.();
+      }
+    })
+  ).current;
 
   const fetchComments = useCallback(async (refresh = false) => {
     try {
@@ -75,8 +126,29 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
   }, [videoId]);
 
   React.useEffect(() => {
+    setComments(initialComments || []);
     fetchComments(true);
-  }, [fetchComments]);
+  }, [videoId, initialComments, fetchComments]);
+
+  // Loading spinner rotation control
+  React.useEffect(() => {
+    let loop: Animated.CompositeAnimation | null = null;
+    if (isLoadingMore) {
+      spinAnim.setValue(0);
+      loop = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+      loop.start();
+    }
+    return () => {
+      if (loop) loop.stop();
+    };
+  }, [isLoadingMore, spinAnim]);
 
   React.useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
@@ -187,15 +259,24 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
   }, [formatTimeAgo]);
 
   return (
-    <KeyboardAvoidingView
+    <View style={styles.rootTranslateWrapper}>
+      <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, style]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
     >
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <ThemedText style={styles.headerTitle}>Comments</ThemedText>
-        <ThemedText style={styles.commentCount}>{comments?.length || 0}</ThemedText>
-      </ThemedView>
+      <View style={styles.draggableHeaderWrapper}>
+        <View
+          style={[styles.dragHandleContainer, { borderBottomColor: borderColor }]}
+          {...panResponder.panHandlers}
+        >
+          <View style={styles.dragHandle} />
+          <View style={styles.headerRow}>
+            <ThemedText style={styles.headerTitle}>Comments</ThemedText>
+            <ThemedText style={styles.commentCount}>{comments?.length || 0}</ThemedText>
+          </View>
+        </View>
+      </View>
 
       <FlatList
         ref={flatListRef}
@@ -209,10 +290,16 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
         ]}
         showsVerticalScrollIndicator={true}
         indicatorStyle="white"
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
         scrollEnabled={true}
         alwaysBounceVertical={true}
+        nestedScrollEnabled
+        scrollEventThrottle={16}
         overScrollMode="always"
+        onScrollBeginDrag={onInteractionStart}
+        onScrollEndDrag={onInteractionEnd}
+        onMomentumScrollEnd={onInteractionEnd}
         onEndReached={() => {
           if (!isLoadingMore && hasMoreComments) {
             setIsLoadingMore(true);
@@ -220,13 +307,17 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
           }
         }}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={() => (
-          isLoadingMore ? (
+        ListFooterComponent={() => {
+          if (!isLoadingMore) return null;
+          const spin = spinAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+          return (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#007AFF" />
+              <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                <IconSymbol name="arrow.triangle.2.circlepath" size={20} color="#9583fe" />
+              </Animated.View>
             </View>
-          ) : null
-        )}
+          );
+        }}
       />
 
       <Animated.View 
@@ -270,7 +361,8 @@ export function CommentSection({ videoId, onCommentAdded, style }: CommentSectio
           />
         </TouchableOpacity>
       </Animated.View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -281,17 +373,39 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     minHeight: 200,
   },
-  header: {
+  rootTranslateWrapper: {
+    flex: 1,
+  },
+  draggableHeaderWrapper: {
+    zIndex: 2,
+  },
+  dragHandleContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  dragHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginBottom: 8,
+  },
+  headerRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Montserrat-Bold',
   },
   commentCount: {
     fontSize: 14,
@@ -300,9 +414,10 @@ const styles = StyleSheet.create({
   commentList: {
     flex: 1,
     width: '100%',
+    paddingLeft: 12,
   },
   commentListContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 16,
     flexGrow: 1,
   },
@@ -330,14 +445,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 8,
     fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   timestamp: {
     fontSize: 12,
     opacity: 0.6,
   },
   commentText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 20,
+    color: 'lightgray',
+    fontFamily: 'Inter-Regular',
   },
   inputContainer: {
     flexDirection: 'row',

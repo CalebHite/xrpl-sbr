@@ -116,7 +116,6 @@ export default function Trade() {
         <View style={styles.orderRow}>
           <View style={styles.orderContent}>
             <ThemedText style={styles.orderAmount}>Amount: {order.amount} XRP</ThemedText>
-            <ThemedText style={styles.orderDetail}>Token: {order.tokenId.split(':')[1]}</ThemedText>
             <ThemedText style={styles.orderDetail}>
               Created: {new Date(order.createdAt).toLocaleString()}
             </ThemedText>
@@ -202,11 +201,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   filterWrapper: {
     flexDirection: 'row',
     marginBottom: 32,
+    marginHorizontal: 16,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
@@ -232,6 +231,7 @@ const styles = StyleSheet.create({
   },
   scrollArea: {
     flex: 1,
+    backgroundColor: '#1A1A1A',
   },
   logo: {
     width: 75,
@@ -263,7 +263,6 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 16,
     flex: 1,
-    padding: 16,
     backgroundColor: '#101010',   
   },
   centerContainer: {
@@ -272,6 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   section: {
+    marginTop: 16,
     marginBottom: 24,
   },
   title: {
@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
   orderCard: {
     padding: 16,
     marginBottom: 12,
+    marginHorizontal: 16,
     backgroundColor: '#101010',
     borderRadius: 16,
     borderColor: '#ffffff',
@@ -304,6 +305,7 @@ const styles = StyleSheet.create({
   placeholder: {
     textAlign: 'center',
     marginTop: 16,
+    marginHorizontal: 24,
     opacity: 0.5,
   },
   error: {

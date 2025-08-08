@@ -77,7 +77,7 @@ export default function CreateScreen() {
     return (
       <ThemedView style={styles.container}>
         <ActivityIndicator size="large" />
-        <ThemedText style={styles.uploadingText}>Creating your video token...</ThemedText>
+        <ThemedText style={styles.uploadingText}>Creating your video!</ThemedText>
       </ThemedView>
     );
   }

@@ -21,7 +21,7 @@ interface VideoOverlayProps {
     comments: Comment[];
   };
   xrplSeed?: string;
-  onCommentAdded?: (videoId: string, newComment: Comment) => void;
+  onCommentAdded?: (newComment: Comment) => void;
 }
 
 interface Comment {
@@ -60,7 +60,7 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [isCommentSectionVisible]);
+  }, [isCommentSectionVisible, commentSectionAnim]);
 
   const handleTradePress = () => {
     setIsTradeOverlayVisible(true);
@@ -71,8 +71,8 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
   };
 
   const handleCommentAdded = (newComment: Comment) => {
-    if (newComment && video?.videoId) {
-      onCommentAdded?.(video.videoId, newComment);
+    if (newComment) {
+      onCommentAdded?.(newComment);
     }
   };
 
@@ -178,6 +178,7 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
             <CommentSection
               videoId={video.videoId}
               comments={video.comments || []}
+              onClose={() => setIsCommentSectionVisible(false)}
               onCommentAdded={handleCommentAdded}
             />
           </Animated.View>
