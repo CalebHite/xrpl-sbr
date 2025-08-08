@@ -2,10 +2,12 @@ import { CommentSection } from '@/components/ui/CommentSection';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { ResizeMode, Video } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
+
 
 const { height } = Dimensions.get('window');
 
@@ -44,6 +46,7 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
   const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
   const videoRef = useRef<Video | null>(null);
   const commentSectionAnim = useRef(new Animated.Value(0)).current;
+  const commentDragY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
@@ -111,17 +114,25 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
               isMuted={false}
             />
           </TouchableOpacity>
+          <View style={styles.tradeButtonContainer}>
+            <View style={styles.tradeButtonShadow}>
+              <TouchableOpacity onPress={handleTradePress} activeOpacity={0.9}>
+                <LinearGradient
+                  colors={["rgba(140, 82, 255, 1)", "rgba(166, 220, 255, 1)"]}
+                  style={styles.tradeButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <IconSymbol 
+                    name="arrow.triangle.2.circlepath"
+                    size={48}
+                    color="#fff"
+                  />
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              onPress={handleTradePress}
-            >
-              <IconSymbol 
-                name="arrow.triangle.2.circlepath"
-                size={28}
-                color="#fff"
-              />
-            </TouchableOpacity>
             <TouchableOpacity 
               style={styles.iconButton}
               onPress={handleCommentPress}
@@ -143,11 +154,7 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
               style={styles.iconButton}
               onPress={onClose}
             >
-              <IconSymbol 
-                name="xmark"
-                size={28}
-                color="#fff"
-              />
+              <ThemedText style={styles.closeButton}>x</ThemedText>
             </TouchableOpacity>
           </View>
           <View style={styles.videoInfo}>
@@ -165,12 +172,18 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
             style={[
               styles.commentSectionContainer,
               {
-                transform: [{
-                  translateY: commentSectionAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [300, 0]
-                  })
-                }]
+                transform: [
+                  {
+                    translateY: Animated.add(
+                      commentSectionAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [350, 0]
+                      }),
+                      commentDragY
+                    )
+                  }
+                ],
+                backgroundColor: 'transparent'
               }
             ]}
             pointerEvents={isCommentSectionVisible ? 'auto' : 'none'}
@@ -178,7 +191,19 @@ export function VideoOverlay({ isVisible, onClose, video, xrplSeed, onCommentAdd
             <CommentSection
               videoId={video.videoId}
               comments={video.comments || []}
-              onClose={() => setIsCommentSectionVisible(false)}
+              onClose={() => {
+                Animated.timing(commentSectionAnim, {
+                  toValue: 0,
+                  duration: 300,
+                  useNativeDriver: true,
+                }).start(() => {
+                  setIsCommentSectionVisible(false);
+                  commentDragY.setValue(0);
+                });
+              }}
+              onDragChange={(dy) => {
+                commentDragY.setValue(Math.max(0, Math.min(350, dy)));
+              }}
               onCommentAdded={handleCommentAdded}
             />
           </Animated.View>
@@ -214,7 +239,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 100,
     left: 0,
-    right: 0,
+    right: 80,
     padding: 20,
   },
   videoHeader: {
@@ -233,17 +258,44 @@ const styles = StyleSheet.create({
     textShadowRadius: 10
   },
   videoDescription: {
-    fontSize: 14,
-    fontFamily: "Montserrat-Bold",
+    fontSize: 18,
+    fontWeight: '900',
+    fontFamily: "Montserrat-Variable",
     color: '#fff',
     marginBottom: 15,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: -1, height: 1 },
     textShadowRadius: 10
   },
-  buttonContainer: {
+  tradeButtonShadow: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderRadius: 50,
+    backgroundColor: 'transparent',
+  },
+  tradeButtonGradient: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  tradeButtonContainer: {
     position: 'absolute',
     top: 50,
+    right: 20,
+    zIndex: 1,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 120,
     right: 20,
     zIndex: 1,
     gap: 10,
@@ -264,11 +316,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 300,
+    height: 350,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 16,
-    backgroundColor: 'transparent',
+    overflow: 'hidden',
+    elevation: 10,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   commentBadge: {
     position: 'absolute',
@@ -286,5 +346,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  closeButton: {
+    fontSize: 28,
+    color: '#fff',
+    fontFamily: 'Montserrat-Bold',
+    textAlign: 'center',
+    lineHeight: 28,
   }
 }); 

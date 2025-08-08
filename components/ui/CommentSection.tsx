@@ -341,7 +341,6 @@ export function CommentSection({ videoId, onCommentAdded, style, onClose, onDrag
           onChangeText={setNewComment}
           placeholder="Add a comment..."
           style={styles.input}
-          multiline
           maxLength={1000}
           textAlignVertical="center"
           blurOnSubmit={false}
@@ -474,7 +473,7 @@ const styles = StyleSheet.create({
   submitButton: {
     width: 32,
     height: 32,
-    color: '#2fa4ff',
+    color: '#9583fe',
     justifyContent: 'center',
     alignItems: 'center',
   },

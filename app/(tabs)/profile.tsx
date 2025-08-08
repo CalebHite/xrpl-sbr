@@ -202,7 +202,6 @@ export default function Profile() {
                   value={newBio}
                   onChangeText={setNewBio}
                   placeholder="Write something about yourself..."
-                  multiline
                   onBlur={handleBioChange}
                   onSubmitEditing={handleBioChange}
                 />
@@ -359,6 +358,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+    fontWeight: "semibold",
+    fontFamily: "Montserrat-Regular",
   },
   bioInput: {
     fontSize: 16,
@@ -367,6 +368,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderWidth: 1,
     borderColor: "#ddd",
+    fontFamily: "Montserrat-Regular",
     borderRadius: 8,
   },
   statsSection: {

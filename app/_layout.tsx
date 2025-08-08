@@ -48,6 +48,7 @@ export default function RootLayout() {
     'Montserrat': require('../assets/fonts/Montserrat-Regular.ttf'),
     'Montserrat-Variable': require('../assets/fonts/Montserrat-VariableFont_wght.ttf'),
     'Montserrat-Italic': require('../assets/fonts/Montserrat-Italic-VariableFont_wght.ttf'),
+    'Montserrat-Bold': require('../assets/fonts/static/Montserrat-Bold.ttf'),
   });
 
   if (!loaded) {
