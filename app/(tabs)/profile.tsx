@@ -1,5 +1,6 @@
 "use client"
 
+import { Loader } from '@/components/ui/Loader';
 import { VideoOverlay } from '@/components/ui/VideoOverlay';
 import { getUser, getVideos, logout, updateUser } from '@/scripts/account';
 import { Ionicons } from "@expo/vector-icons";
@@ -8,7 +9,7 @@ import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, ImageBackground, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Image, ImageBackground, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUser } from '../context/UserContext';
 const bgLight = require('../../assets/images/bg-light.png');
 const virlLogoLightFull = require('../../assets/images/virl_logo_light_full.png');
@@ -234,7 +235,7 @@ export default function Profile() {
             <View style={styles.videosGrid}>
               {isLoadingVideos ? (
                 <View style={styles.noVideosContainer}>
-                  <ActivityIndicator size="large" color="#666" />
+                  <Loader size={28} />
                 </View>
               ) : videos.length > 0 ? (
                 videos.map((video, index) => (

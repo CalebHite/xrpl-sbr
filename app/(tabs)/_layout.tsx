@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
@@ -24,11 +25,21 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        tabBarShowLabel: false,
         tabBarStyle: Platform.select({
           ios: {
             position: 'absolute',
+            backgroundColor: '#101010',
+            height: 100,
+            borderTopWidth: 0,
+            paddingTop: 20,
           },
-          default: {},
+          default: {
+            backgroundColor: '#101010',
+            height: 100,
+            borderTopWidth: 0,
+            paddingTop: 20,
+          },
         }),
       }}>
       <Tabs.Screen
@@ -39,17 +50,37 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="create"
-        options={{
-          title: 'Create',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="trade"
         options={{
           title: 'Trade',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="arrow.right.arrow.left" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Create',
+          tabBarIcon: ({ color, focused }) => (
+            <LinearGradient
+              colors={['rgba(140, 82, 255, 1)', 'rgba(166, 220, 255, 1)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                justifyContent: 'center',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOpacity: 0.25,
+                shadowRadius: 6,
+                shadowOffset: { width: 0, height: 3 },
+                elevation: 6,
+              }}
+            >
+              <IconSymbol size={34} name="plus" color="#ffffff" />
+            </LinearGradient>
+          ),
         }}
       />
       <Tabs.Screen

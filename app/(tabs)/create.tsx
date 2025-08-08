@@ -2,13 +2,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Loader } from '@/components/ui/Loader';
 import { Ionicons } from '@expo/vector-icons';
 import { ResizeMode, Video } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { createVideo } from '../../scripts/videos';
 
 export default function CreateScreen() {
@@ -76,7 +77,7 @@ export default function CreateScreen() {
   if (uploading) {
     return (
       <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
+        <Loader size={28} />
         <ThemedText style={styles.uploadingText}>Creating your video!</ThemedText>
       </ThemedView>
     );

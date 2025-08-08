@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#30bf2e',
   },
   sellButton: {
-    backgroundColor: '#cf3652',
+    backgroundColor: '#ff4444',
   },
   formContainer: {
     gap: 20,

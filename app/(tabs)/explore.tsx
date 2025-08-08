@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { CommentSection } from '@/components/ui/CommentSection';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Loader } from '@/components/ui/Loader';
 import { TradeOverlay } from '@/components/ui/TradeOverlay';
 import { UserProfileOverlay } from '@/components/ui/UserProfileOverlay';
 import { VideoOverlay } from '@/components/ui/VideoOverlay';
@@ -12,7 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ResizeMode, Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
+import { Animated, Dimensions, FlatList, StyleSheet, TouchableOpacity, View, ViewToken } from 'react-native';
 import { fetchVideos } from '../../scripts/videos';
 
 const { height } = Dimensions.get('window');
@@ -391,7 +392,7 @@ export default function ExploreScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <ActivityIndicator style={styles.loading} size="large" />
+        <Loader style={styles.loading} size={28} />
       </ThemedView>
     );
   }

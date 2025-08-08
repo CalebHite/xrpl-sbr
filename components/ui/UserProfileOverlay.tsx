@@ -1,11 +1,12 @@
 import { getVideos } from '@/scripts/account';
 import { ResizeMode, Video } from 'expo-av';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { ThemedView } from '../ThemedView';
 import { Button } from './Button';
 import { Card } from './Card';
+import { Loader } from './Loader';
 import { VideoOverlay } from './VideoOverlay';
 
 interface UserProfileOverlayProps {
@@ -189,7 +190,7 @@ export function UserProfileOverlay({
             <View style={styles.videosGrid}>
               {isLoadingVideos ? (
                 <View style={styles.noVideosContainer}>
-                  <ActivityIndicator size="large" color="#666" />
+                  <Loader size={28} color="#666" />
                 </View>
               ) : videos.length > 0 ? (
                 videos.map((video, index) => (
@@ -235,7 +236,8 @@ export function UserProfileOverlay({
             contentUrl: selectedVideo.contentUrl,
             title: selectedVideo.title || '',
             description: selectedVideo.description || '',
-            mptIssuanceId: selectedVideo.mptIssuanceId || ''
+            mptIssuanceId: selectedVideo.mptIssuanceId || '',
+            comments: selectedVideo.comments || []
           }}
           xrplSeed={user?.metadata?.wallet?.seed}
         />
@@ -259,16 +261,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#101010',
   },
   closeButton: {
-    position: 'absolute',
-    right: 10,
-    top: 10,
+    alignSelf: 'flex-end',
     padding: 10,
-    zIndex: 1,
+    backgroundColor: '#333',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 24,
+    marginTop: 5,
+    fontSize: 30,
+    fontFamily: 'Montserrat-Bold',
     fontWeight: 'bold',
-    color: '#e8eff4',
+    color: '#ffffff',
   },
   profileSection: {
     alignItems: 'center',
@@ -287,7 +294,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     minWidth: 120,
-    backgroundColor: '#2fa4ff',
+    backgroundColor: '#8C52FF',
     color: '#e8eff4',
     fontFamily: 'Montserrat-Bold',
     fontSize: 16,
