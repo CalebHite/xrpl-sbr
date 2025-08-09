@@ -179,10 +179,10 @@ const styles = StyleSheet.create({
   contentCenter: { width: '100%', maxWidth: 360, alignItems: 'center' },
   content: { width: '100%', maxWidth: 360 },
   logo: { width: 500, height: 100, marginBottom: 24 },
-  title: { fontSize: 20, fontFamily: 'Montserrat-Bold', marginBottom: 8, color: '#000' },
+  title: { fontSize: 20, fontFamily: 'Montserrat-Bold', marginBottom: 16, color: '#000' },
   subtitle: { fontSize: 16, opacity: 0.8, textAlign: 'center' },
   form: { gap: 12 },
   input: { width: '100%', backgroundColor: '#fff', borderRadius: 10, padding: 10, color: '#000' },
   primary: { width: '100%', height: 48, marginTop: 8, backgroundColor: 'rgba(140, 82, 255, 1)' },
-  secondaryText: { width: '100%', height: 40, color: '#000', textAlign: 'center', fontWeight: '200', fontFamily: 'Montserrat-Bold' },
+  secondaryText: { width: '100%', height: 40, color: '#666', textAlign: 'center', fontWeight: '200', fontFamily: 'Montserrat-Bold' },
 }); 
