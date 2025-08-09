@@ -96,7 +96,58 @@ async function fetchOrders() {
   }
 
   try {
-    return JSON.parse(responseText);
+    const ordersData = JSON.parse(responseText);
+
+    // Also fetch video metadata and attach it to each order
+    try {
+      const videosResponse = await fetch(`${API_BASE_URL}/api/videos`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, */*;q=0.8'
+        },
+        credentials: 'include',
+      });
+
+      const videosText = await videosResponse.text();
+      console.log('Videos response status:', videosResponse.status);
+      console.log('Videos response body:', videosText);
+
+      if (!videosResponse.ok) {
+        console.error('Failed fetching videos for metadata:', videosText);
+        return ordersData; // Return orders without enrichment
+      }
+
+      const videosData = JSON.parse(videosText);
+      const videos = Array.isArray(videosData?.videos) ? videosData.videos : [];
+
+      // Build a lookup by mptIssuanceId for quick join
+      const issuanceIdToVideo = new Map();
+      for (const video of videos) {
+        if (video && video.mptIssuanceId) {
+          issuanceIdToVideo.set(video.mptIssuanceId, video);
+        }
+      }
+
+      const enrichOrders = (ordersArray) => {
+        if (!Array.isArray(ordersArray)) return [];
+        return ordersArray.map((order) => ({
+          ...order,
+          video: issuanceIdToVideo.get(order?.mptIssuanceId) || null,
+        }));
+      };
+
+      if (ordersData && ordersData.orders) {
+        ordersData.orders = {
+          buy: enrichOrders(ordersData.orders.buy),
+          sell: enrichOrders(ordersData.orders.sell),
+        };
+      }
+    } catch (videoErr) {
+      console.error('Error enriching orders with video metadata:', videoErr);
+      // Non-fatal: proceed with plain orders
+    }
+
+    return ordersData;
   } catch (e) {
     console.error('Failed to parse response as JSON:', e);
     throw new Error(`Invalid JSON response: ${responseText.slice(0, 200)}`);

@@ -7,8 +7,18 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Card } from '@/components/ui/Card';
 import { ScrollArea } from '@/components/ui/ScrollArea';
+import { VideoOverlay } from '@/components/ui/VideoOverlay';
 import { createBuyOrder, createSellOrder, fetchOrders } from '@/scripts/trade';
+import { ResizeMode, Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
+
+interface VideoPreview {
+  videoId: string;
+  contentUrl: string;
+  title: string;
+  description?: string;
+  mptIssuanceId: string;
+}
 
 interface Order {
   status: string;
@@ -19,6 +29,7 @@ interface Order {
   timeOutDuration: number;
   createdAt: string;
   updatedAt: string;
+  video?: VideoPreview | null;
 }
 
 interface OrdersResponse {
@@ -35,6 +46,8 @@ export default function Trade() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [orderType, setOrderType] = React.useState<'buy' | 'sell'>('buy');
+  const [isVideoOverlayVisible, setIsVideoOverlayVisible] = React.useState(false);
+  const [selectedVideo, setSelectedVideo] = React.useState<VideoPreview | null>(null);
 
   const loadOrders = React.useCallback(async () => {
     try {
@@ -114,12 +127,36 @@ export default function Trade() {
     return (
       <Card key={order._id} style={styles.orderCard}>
         <View style={styles.orderRow}>
-          <View style={styles.orderContent}>
-            <ThemedText style={styles.orderAmount}>Amount: {order.amount} XRP</ThemedText>
-            <ThemedText style={styles.orderDetail}>
-              Created: {new Date(order.createdAt).toLocaleString()}
-            </ThemedText>
-          </View>
+          <TouchableOpacity 
+            style={styles.orderContent}
+            activeOpacity={0.9}
+            onPress={() => {
+              if (order.video) {
+                setSelectedVideo(order.video);
+                setIsVideoOverlayVisible(true);
+              }
+            }}
+          >
+            {order.video?.contentUrl ? (
+              <View style={styles.previewWrapper}>
+                <Video
+                  source={{ uri: order.video.contentUrl }}
+                  style={styles.previewVideo}
+                  useNativeControls={false}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay
+                  isLooping
+                  isMuted
+                />
+              </View>
+            ) : null}
+            <View style={styles.orderMetaRow}>
+              <ThemedText style={styles.orderAmount}>Amount: {order.amount} XRP</ThemedText>
+              <ThemedText style={styles.orderDetailRight}>
+                {new Date(order.createdAt).toLocaleString()}
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => handleFulfillOrder(order, isBuyOrder)}
             disabled={isLoading}>
@@ -189,6 +226,25 @@ export default function Trade() {
             )}
           </View>
         </ScrollArea>
+
+        {selectedVideo && (
+          <VideoOverlay
+            isVisible={isVideoOverlayVisible}
+            onClose={() => {
+              setIsVideoOverlayVisible(false);
+              setSelectedVideo(null);
+            }}
+            video={{
+              videoId: selectedVideo.videoId,
+              contentUrl: selectedVideo.contentUrl,
+              title: selectedVideo.title,
+              description: selectedVideo.description,
+              mptIssuanceId: selectedVideo.mptIssuanceId,
+              comments: [],
+            }}
+            xrplSeed={user?.metadata?.wallet?.seed}
+          />
+        )}
       </View>
     </ThemedView>
   );
@@ -247,6 +303,42 @@ const styles = StyleSheet.create({
   orderContent: {
     flex: 1,
     marginRight: 16,
+  },
+  previewWrapper: {
+    width: '100%',
+    aspectRatio: 16 / 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 10,
+    backgroundColor: '#000',
+  },
+  previewVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  previewTitle: {
+    position: 'absolute',
+    bottom: 8,
+    left: 12,
+    right: 12,
+    color: '#fff',
+    fontFamily: 'Montserrat-Bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10,
+  },
+  orderMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  orderDetailRight: {
+    fontSize: 14,
+    opacity: 0.8,
+    textAlign: 'right',
+    marginLeft: 8,
+    marginBottom: 8,
   },
   fulfillButton: {
     overflow: 'hidden',
