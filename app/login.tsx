@@ -1,10 +1,12 @@
 import { AxiosError } from 'axios';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Image, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { createUser, login } from '@/scripts/account';
 import { useUser } from './context/UserContext';
 
@@ -41,10 +43,13 @@ interface ErrorResponse {
 
 export default function Login() {
   const { setUser } = useUser();
+  const [stage, setStage] = useState<'intro' | 'form'>('intro');
+  const [isSignup, setIsSignup] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [isSignup, setIsSignup] = useState(false);
 
   const handleLogin = async () => {
     try {
@@ -52,21 +57,19 @@ export default function Login() {
         Alert.alert('Error', 'Please fill in all fields');
         return;
       }
-      console.log('Attempting login with:', { username, password: '***' });
+      setSubmitting(true);
       const user = await login(username, password);
       setUser(user);
       router.replace('/(tabs)/explore');
     } catch (error: unknown) {
-      console.error('Login error:', error);
-      if (error instanceof Error) {
-        Alert.alert('Error', error.message);
-      } else {
-        const axiosError = error as AxiosError<ErrorResponse>;
-        Alert.alert(
-          'Error',
-          axiosError.response?.data?.error || 'Failed to login. Please check your credentials and try again.'
-        );
-      }
+      const axiosError = error as AxiosError<ErrorResponse>;
+      Alert.alert(
+        'Error',
+        axiosError.response?.data?.error ||
+          'Failed to login. Please check your credentials and try again.'
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -76,147 +79,110 @@ export default function Login() {
         Alert.alert('Error', 'Please fill in all fields');
         return;
       }
+      setSubmitting(true);
       const user = await createUser(username, password, email);
       setUser(user);
       router.replace('/(tabs)/explore');
     } catch (error: unknown) {
-      console.error('Signup error:', error);
       const axiosError = error as AxiosError<ErrorResponse>;
       Alert.alert(
         'Error',
         axiosError.response?.data?.error || 'Failed to create account. Please try again.'
       );
+    } finally {
+      setSubmitting(false);
     }
   };
 
+  if (stage === 'intro') {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.contentCenter}>
+          <Image
+            source={require('../assets/images/virl_logo_light_full.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <ThemedText style={styles.title}>Welcome</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Sign in to explore creators and trade on VIRL
+          </ThemedText>
+
+          <Button style={styles.primary} onPress={() => setStage('form')}>
+            Login
+          </Button>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText style={styles.title}>Welcome</ThemedText>
-      <View style={styles.inputContainer}>
-        {!isSignup && (
-         <View style={styles.inputContainer}>
-          <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          placeholderTextColor="#666"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholderTextColor="#666"
-          secureTextEntry={true}
-        />
-        <ThemedText
-          onPress={handleLogin}
-          style={styles.button}
-        >
-          Login
-        </ThemedText>
-        <ThemedText
-          onPress={() => setIsSignup(!isSignup)}
-          style={styles.highlight}
-        >
-          Signup
-        </ThemedText>
-        </View>
-        )}
-        {isSignup && (
-          <View style={styles.inputContainer}>
-          <TextInput
-          style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          placeholderTextColor="#666"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholderTextColor="#666"
-          secureTextEntry={true}
-        />
-          <TextInput
+      <View style={styles.content}>
+        <ThemedText style={styles.title}>{isSignup ? 'Create account' : 'Login'}</ThemedText>
+        <View style={styles.form}>
+          <Input
             style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholderTextColor="#666"
-            keyboardType="email-address"
+            placeholder="Username"
+            value={username}
+            onChangeText={setUsername}
             autoCapitalize="none"
+            autoCorrect={false}
+            editable={!submitting}
           />
-          <ThemedText
-            onPress={handleSignup}
-            style={styles.button}
+          <Input
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!submitting}
+          />
+          {isSignup && (
+            <Input
+              style={styles.input}
+              placeholder="Email"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!submitting}
+            />
+          )}
+
+          <Button
+            onPress={isSignup ? handleSignup : handleLogin}
+            disabled={submitting}
+            style={styles.primary}
           >
-            Signup
-          </ThemedText>
+            {isSignup ? 'Sign up' : 'Login'}
+          </Button>
+
           <ThemedText
             onPress={() => setIsSignup(!isSignup)}
-            style={styles.highlight}
+            disabled={submitting}
+            style={styles.secondaryText}
           >
-            Back
+            {isSignup ? 'Back to login' : 'Or Create account'}
           </ThemedText>
-          </View>
-        )}
+        </View>
       </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    fontFamily: "Montserrat-Bold",
-  },
-  inputContainer: {
-    width: '100%',
-    maxWidth: 300,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#666',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    width: '100%',
-    marginBottom: 15,
-    fontSize: 16,
-    color: '#000',
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    textAlign: 'center',
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    width: '100%',
-    fontFamily: "Montserrat-Bold",
-  },
-  highlight: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 20,
-    fontFamily: "Montserrat-Bold",
-  },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  contentCenter: { width: '100%', maxWidth: 360, alignItems: 'center' },
+  content: { width: '100%', maxWidth: 360 },
+  logo: { width: 500, height: 100, marginBottom: 24 },
+  title: { fontSize: 20, fontFamily: 'Montserrat-Bold', marginBottom: 8, color: '#000' },
+  subtitle: { fontSize: 16, opacity: 0.8, textAlign: 'center' },
+  form: { gap: 12 },
+  input: { width: '100%', backgroundColor: '#fff', borderRadius: 10, padding: 10, color: '#000' },
+  primary: { width: '100%', height: 48, marginTop: 8, backgroundColor: 'rgba(140, 82, 255, 1)' },
+  secondaryText: { width: '100%', height: 40, color: '#000', textAlign: 'center', fontWeight: '200', fontFamily: 'Montserrat-Bold' },
 }); 
